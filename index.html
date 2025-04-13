@@ -1,0 +1,41 @@
+<html>
+<title>Healer game</title>
+<meta name="viewport" content="width=810; initial-scale=1.0">
+<style>
+    .board {    
+        margin-top: 4em;  
+        margin-left: auto;
+        margin-right: auto;
+        border: 3px solid green;
+        display: block;
+    }
+</style>
+<body>
+    <canvas id="myCanvas" width="800" height="450" class="board"></canvas>
+    <br>
+    <textarea id="code" spellcheck="false" rows="12" cols="80">
+moveTo(50, 50);
+for(var i = 0; i < 5; i++){
+    moveTo(Math.random() * 750, Math.random() * 400);
+}    
+    </textarea>
+    <br>        
+    <button onclick="runCode()" id="runButton">Run</button>
+    <!--<button onclick="stepButton()" id="stepButton" disabled="disabled">Step</button>
+    <button onclick="clear()">Clear</button>-->
+</body>
+<script src="./libs/acorn.js"></script>
+<script src="./libs/interpreter.js"></script>
+<script src="game.js"></script>
+
+<!--
+Thanks to Shikashipx and 0x72 for theirs CCA/MIT work on the assets:
+https://0x72.itch.io/dungeontileset-ii
+https://shikashipx.itch.io/shikashis-fantasy-icons-pack
+
+
+Code source and bugs report can found on:
+https://github.com/OlivierDeRivoyre/HealGame
+-->
+
+</html>
