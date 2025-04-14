@@ -17,15 +17,18 @@
 while(true){
     moveTo(1, 4);
     var r = Math.random();
-    log(r);
+    say(r);
     if (r < 0.33){
         moveTo(0, 0);
+        say("Mining");
     } else if (r < 0.66){
         moveTo(2, 0);    
+        say("Chop chop chop");
     } else {
         moveTo(1, 8);
+        say("Harvest");
     }
-}    
+}     
     </textarea>
     <br>        
     <button onclick="runCode()" id="runButton">Run</button>

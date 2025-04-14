@@ -91,6 +91,7 @@ class Bot {
         this.y = y;
         this.currentAction = null;
         this.interpreter = null;
+        this.cartoonBubble = null;
     }
     update() {
         if (this.currentAction != null) {
@@ -100,6 +101,13 @@ class Bot {
             }
         } else if (this.interpreter != null) {
             this.runCode();
+        }
+        if(this.cartoonBubble){
+            this.cartoonBubble.duration--;
+            if(this.cartoonBubble.duration <=0)
+            {
+                this.cartoonBubble = null;
+            }
         }
     }
     runCode() {
@@ -116,21 +124,36 @@ class Bot {
         console.log("timeout");
     }
     paint() {
-        healerSprite.paint32(this.x, this.y)
+        healerSprite.paint32(this.x, this.y);
+        this.paintCartoonBubble();
     }
     setCode(code) {
         const self = this;
         function initInterpreter(interpreter, globalObject) {            
             interpreter.setProperty(globalObject, 'moveTo', interpreter.createNativeFunction(
                 function moveTo(cell_i, cell_j) {
-                    myBot.currentAction = new MoveToAnim(self, cell_i, cell_j);
+                    self.currentAction = new MoveToAnim(self, cell_i, cell_j);
+                    self.say(`Going to (${cell_i}, ${cell_j})`, 'yellow', 1)
             }));
-            interpreter.setProperty(globalObject, 'log', interpreter.createNativeFunction(
-                function log(msg) {
-                    console.log(msg);
+            interpreter.setProperty(globalObject, 'say', interpreter.createNativeFunction(
+                function say(msg) {
+                    const duration = 1.5;
+                    self.currentAction = new WaitAnim(duration)
+                    self.say(msg, 'black', duration);
             }));
         }
         myBot.interpreter = new Interpreter(code, initInterpreter);
+    }
+    say(msg, color, duration){
+        this.cartoonBubble = {msg, color, duration: duration * 30};
+    }
+    paintCartoonBubble()    {
+        if(!this.cartoonBubble){
+            return;
+        }
+        ctx.fillStyle = this.cartoonBubble.color;
+        ctx.font = "12px Verdana";
+        ctx.fillText(this.cartoonBubble.msg, this.x, this.y - 10);
     }
 }
 class MoveToAnim {
@@ -140,7 +163,7 @@ class MoveToAnim {
         cell_j = Math.max(0, Math.min(Math.floor(cell_j), Map.MaxY - 1));      
         this.destX = Map.BorderX + cell_i * 48 + 8;
         this.destY = Map.BorderY + cell_j * 48 + 10;
-        this.speed = 5;
+        this.speed = 3;
     }
     update() {
         const d = Math.sqrt(square(this.destX - this.item.x) + square(this.destY - this.item.y));
@@ -154,6 +177,16 @@ class MoveToAnim {
         return false;
     }
 }
+class WaitAnim {
+    constructor(duration) {
+        this.duration = duration * 30;
+    }
+    update() {
+        this.duration--;
+        return this.duration <= 0;
+    }
+}
+
 let myBot = new Bot(300, 300);
 
 
