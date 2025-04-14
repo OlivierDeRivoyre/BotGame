@@ -1,5 +1,5 @@
 <html>
-<title>Healer game</title>
+<title>Bot game</title>
 <meta name="viewport" content="width=810; initial-scale=1.0">
 <style>
     .board {    
@@ -14,9 +14,17 @@
     <canvas id="myCanvas" width="800" height="450" class="board"></canvas>
     <br>
     <textarea id="code" spellcheck="false" rows="12" cols="80">
-moveTo(50, 50);
-for(var i = 0; i < 5; i++){
-    moveTo(Math.random() * 750, Math.random() * 400);
+while(true){
+    moveTo(1, 4);
+    var r = Math.random();
+    log(r);
+    if (r < 0.33){
+        moveTo(0, 0);
+    } else if (r < 0.66){
+        moveTo(2, 0);    
+    } else {
+        moveTo(1, 8);
+    }
 }    
     </textarea>
     <br>        
