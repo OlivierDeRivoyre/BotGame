@@ -97,6 +97,7 @@ class Bot {
         this.interpreter = null;
         this.cartoonBubble = null;
         this.bag = [];
+        this.bagSize = 2;
     }
     update() {
         if (this.currentAction != null) {
@@ -130,8 +131,11 @@ class Bot {
     paint() {
         healerSprite.paint32(this.x, this.y);
         this.paintCartoonBubble();
-        if(this.currentAction && this.currentAction.paint){
+        if (this.currentAction && this.currentAction.paint) {
             this.currentAction.paint();
+        }
+        for(let i = 0; i < this.bag.length; i++){
+            this.bag[i].paintSmallWithCount(this.x + 16 * i, this.y + 20, 1);
         }
     }
     setCode(code) {
@@ -151,11 +155,16 @@ class Bot {
                 function craft() {
                     self.craft();
                 }));
+            interpreter.setProperty(globalObject, 'take', interpreter.createNativeFunction(
+                function take() {
+                    self.take();
+                }));
+
         }
         myBot.interpreter = new Interpreter(code, initInterpreter);
     }
     sayAndWait(msg, color, duration) {
-        this.currentAction = new WaitAnim(duration)
+        this.currentAction = new WaitAnim(duration);
         this.say(msg, color, duration);
     }
     say(msg, color, duration) {
@@ -200,6 +209,19 @@ class Bot {
         }
         return removed;
     }
+    take() {
+        const item = map.takeItem(this.getCell());
+        if (item == null) {
+            this.sayAndWait("No item to take", "red", 5);
+            return;
+        }
+        this.bag.push(item);
+        while (this.bag.length > this.bagSize) {
+            map.addItemOnGround(this.getCell(), this.bag[0]);
+            this.bag.slice(0, 1);
+        }
+        this.currentAction = new WaitAnim(0.1);
+    }
 }
 class MoveToAnim {
     constructor(item, cell_i, cell_j) {
@@ -242,7 +264,7 @@ class CraftAnim {
     update() {
         this.tick++;
         if (this.tick == this.maxTick) {
-            this.recipe.produceOutput(this.bot);            
+            this.recipe.produceOutput(this.bot);
             return true;
         }
         return false;
@@ -274,11 +296,18 @@ class Item {
         this.name = name;
         this.sprite = sprite;
     }
-    paintSmall(x, y) {
+    paintSmallWithCount(x, y, count) {
         const size = 16;
         ctx.fillStyle = "#0004";
         ctx.fillRect(x, y, size, size);
         this.sprite.paintScale(x, y, size, size);
+        if (count > 1) {
+            ctx.font = "11px Georgia";
+            // ctx.fillStyle = "yellow";
+            // ctx.fillText(bucket.count, x+7, y+15);
+            ctx.fillStyle = "white";
+            ctx.fillText(count, x + 8, y + 14);
+        }
     }
 }
 class Items {
@@ -323,19 +352,23 @@ class ItemStackTile {
             }
         }
     }
+    takeItem() {
+        if (this.buckets.length == 0) {
+            return null;
+        }
+        const item = this.buckets[0].item;
+        this.buckets[0].count--;
+        if (this.buckets[0].count <= 0) {
+            this.buckets.splice(0, 1);
+        }
+        return item;
+    }
     paint() {
         for (let i = 0; i < this.buckets.length; i++) {
             const bucket = this.buckets[i];
             const x = Map.BorderX + this.cell.i * 48 + i * 17;
             const y = Map.BorderY + this.cell.j * 48 + 40;
-            bucket.item.paintSmall(x, y);
-            if (bucket.count > 1) {
-                ctx.font = "11px Georgia";
-                // ctx.fillStyle = "yellow";
-                // ctx.fillText(bucket.count, x+7, y+15);
-                ctx.fillStyle = "white";
-                ctx.fillText(bucket.count, x + 8, y + 14);
-            }
+            bucket.item.paintSmallWithCount(x, y, bucket.count);         
         }
     }
 }
@@ -356,7 +389,7 @@ class Recipe {
         this.inputs = inputs;
     }
     countItems(item, bot) {
-        const onBot = bot.countItems(item) ;
+        const onBot = bot.countItems(item);
         const onMap = map.countItems(bot.getCell(), item);
         return onBot + onMap;
     }
@@ -377,7 +410,7 @@ class Recipe {
             }
         }
     }
-    produceOutput(bot){
+    produceOutput(bot) {
         map.addItemOnGround(bot.getCell(), this.output);
     }
 }
@@ -409,8 +442,8 @@ class TileFactory {
         return tile;
     }
     createAppleTree() {
-        const sprite = getPipoTile(2, 1);        
-        const recipe = new Recipe(items.apple, 1.5, [{item: items.water,  count:1}]);
+        const sprite = getPipoTile(2, 1);
+        const recipe = new Recipe(items.apple, 1.5, [{ item: items.water, count: 1 }]);
         const tile = new BuildingTile(2, 0, sprite, recipe);
         return tile;
     }
@@ -475,6 +508,13 @@ class Map {
         let itemStack = this.getItemStackAt(cell);
         itemStack.removeItems(item, count);
     }
+    takeItem(cell) {
+        let itemStack = this.getItemStackAt(cell);
+        if (itemStack == null) {
+            return null;
+        }
+        return itemStack.takeItem();
+    }
     getBuilding(cell) {
         for (let building of this.buildingTiles) {
             if (building.cell.i === cell.i && building.cell.j === cell.j) {
@@ -490,6 +530,7 @@ map.addItemOnGround({ i: 0, j: 3 }, items.water);
 map.addItemOnGround({ i: 0, j: 3 }, items.apple);
 map.addItemOnGround({ i: 0, j: 3 }, items.water);
 map.addItemOnGround({ i: 2, j: 0 }, items.water);
+map.addItemOnGround({ i: 6, j: 6 }, items.water);
 
 function runCode() {
     const code = document.getElementById('code').value;

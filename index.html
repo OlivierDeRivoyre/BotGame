@@ -2,14 +2,15 @@
 <title>Bot game</title>
 <meta name="viewport" content="width=810; initial-scale=1.0">
 <style>
-    .board {    
-        margin-top: 4em;  
+    .board {
+        margin-top: 4em;
         margin-left: auto;
         margin-right: auto;
         border: 3px solid green;
         display: block;
     }
 </style>
+
 <body>
     <canvas id="myCanvas" width="800" height="450" class="board"></canvas>
     <br>
@@ -17,21 +18,13 @@
 while(true){
     moveTo(0, 3);
     craft();
-    var r = Math.random();
-    say(r);
-    if (r < 0.33){
-        moveTo(0, 0);
-        say("Mining");
-    } else if (r < 0.66){
-        moveTo(2, 0);    
-        say("Chop chop chop");
-    } else {
-        moveTo(1, 8);
-        say("Harvest");
-    }
+    take();
+    moveTo(2, 0);
+    craft();
 }     
+            
     </textarea>
-    <br>        
+    <br>
     <button onclick="runCode()" id="runButton">Run</button>
     <!--<button onclick="stepButton()" id="stepButton" disabled="disabled">Step</button>
     <button onclick="clear()">Clear</button>-->
