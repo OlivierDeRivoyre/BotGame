@@ -200,7 +200,7 @@ class Item{
     }
     paintSmall(x, y){
         const size = 16;
-        ctx.fillStyle = "yellow";
+        ctx.fillStyle = "#0004";
         ctx.fillRect(x, y, size, size);
         this.sprite.paintScale(x, y, size, size);  
     }
@@ -237,10 +237,10 @@ class ItemStackTile {
             const y = Map.BorderY + this.cell.j * 48 + 40;
             bucket.item.paintSmall(x, y);
             if(bucket.count > 1){
-                ctx.font = "14px Verdana";
+                ctx.font = "11px Georgia";
+               // ctx.fillStyle = "yellow";
+               // ctx.fillText(bucket.count, x+7, y+15);
                 ctx.fillStyle = "white";
-                ctx.fillText(bucket.count, x+7, y+15);
-                ctx.fillStyle = "black";
                 ctx.fillText(bucket.count, x+8, y+14);
             }
         }
