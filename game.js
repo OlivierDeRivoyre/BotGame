@@ -143,8 +143,7 @@ class Bot {
         function initInterpreter(interpreter, globalObject) {
             interpreter.setProperty(globalObject, 'moveTo', interpreter.createNativeFunction(
                 function moveTo(cell_i, cell_j) {
-                    self.currentAction = new MoveToAnim(self, cell_i, cell_j);
-                    self.say(`Going to (${cell_i}, ${cell_j})`, 'yellow', 1)
+                    self.moveTo(cell_i, cell_j);
                 }));
             interpreter.setProperty(globalObject, 'say', interpreter.createNativeFunction(
                 function say(msg) {
@@ -167,6 +166,16 @@ class Bot {
 
         }
         myBot.interpreter = new Interpreter(code, initInterpreter);
+    }
+    moveTo(cell_i, cell_j) {
+        const target = map.getTarget(cell_i, cell_j);
+        if(target == null){
+            this.sayAndWait(`Target not found: ${cell_i} ${cell_j}`, "red", 5);
+            return;
+        }
+        this.currentAction = new MoveToAnim(this, target.cell.i, target.cell.j);
+        const targetName = target.building != null ? target.building.name : `(${cell_i}, ${cell_j})`;
+        this.say(`Going to ${targetName}`, 'yellow', 1)
     }
     sayAndWait(msg, color, duration) {
         this.currentAction = new WaitAnim(duration);
@@ -227,8 +236,8 @@ class Bot {
         }
         this.currentAction = new WaitAnim(0.1);
     }
-    drop(){
-        if(this.bag.length == 0){
+    drop() {
+        if (this.bag.length == 0) {
             this.sayAndWait("No item in bag to drop", "red", 5);
             return;
         }
@@ -429,8 +438,9 @@ class Recipe {
     }
 }
 class BuildingTile {
-    constructor(i, j, sprite, recipe) {
-        this.cell = { i, j };
+    constructor(name, cell, sprite, recipe) {
+        this.name = name;
+        this.cell = cell;
         this.sprite = sprite;
         this.recipe = recipe;
     }
@@ -442,10 +452,10 @@ class BuildingTile {
 class TileFactory {
     createBuildingTiles() {
         return [
-            new BuildingTile(1, 4, smallHouseSprite),
-            new BuildingTile(0, 0, mineSprite),
+            new BuildingTile("house", { i: 1, j: 4 }, smallHouseSprite),
+            new BuildingTile("mine", { i: 0, j: 0 }, mineSprite),
             this.createAppleTree(),
-            new BuildingTile(1, 8, farmSprite),
+            new BuildingTile("farm", { i: 1, j: 8 }, farmSprite),
             this.createWaterWell(),
             this.createPyramid(),
         ];
@@ -453,18 +463,18 @@ class TileFactory {
     createWaterWell() {
         const sprite = getPipoTile(6, 1);
         const recipe = new Recipe(items.water, 1.5, []);
-        const tile = new BuildingTile(0, 3, sprite, recipe);
+        const tile = new BuildingTile("well", { i: 0, j: 3 }, sprite, recipe);
         return tile;
     }
     createAppleTree() {
         const sprite = getPipoTile(2, 1);
         const recipe = new Recipe(items.apple, 1.5, [{ item: items.water, count: 1 }]);
-        const tile = new BuildingTile(2, 0, sprite, recipe);
+        const tile = new BuildingTile("tree", { i: 2, j: 0 }, sprite, recipe);
         return tile;
     }
-    createPyramid(){
-        const sprite = getPipoTile(1, 10);        
-        const tile = new BuildingTile(7, 4, sprite, null);
+    createPyramid() {
+        const sprite = getPipoTile(1, 10);
+        const tile = new BuildingTile("pyramid", { i: 7, j: 4 }, sprite, null);
         return tile;
     }
 }
@@ -542,6 +552,25 @@ class Map {
             }
         }
         return null;
+    }
+    getTarget(a, b) {
+        if (b === undefined && a.toLowerCase) {
+            for (let building of this.buildingTiles) {
+                if (building.name.toLowerCase() == a.toLowerCase()) {
+                    return { building, cell: building.cell };
+                }
+            }
+            return null;
+        } else {
+            const cell_i = Math.max(0, Math.min(Math.floor(a), Map.MaxX - 1));
+            const cell_j = Math.max(0, Math.min(Math.floor(b), Map.MaxY - 1));
+            for (let building of this.buildingTiles) {
+                if (building.cell.i == cell_i && building.cell.j == cell_j) {
+                    return { building, cell: building.cell };
+                }
+            }
+            return { building: null, cell: { i: cell_i, j: cell_j } };
+        }
     }
 }
 let map = new Map();
