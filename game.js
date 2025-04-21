@@ -96,6 +96,7 @@ class Bot {
         this.currentAction = null;
         this.interpreter = null;
         this.cartoonBubble = null;
+        this.bag = [];
     }
     update() {
         if (this.currentAction != null) {
@@ -129,6 +130,9 @@ class Bot {
     paint() {
         healerSprite.paint32(this.x, this.y);
         this.paintCartoonBubble();
+        if(this.currentAction && this.currentAction.paint){
+            this.currentAction.paint();
+        }
     }
     setCode(code) {
         const self = this;
@@ -141,11 +145,18 @@ class Bot {
             interpreter.setProperty(globalObject, 'say', interpreter.createNativeFunction(
                 function say(msg) {
                     const duration = 1.5;
-                    self.currentAction = new WaitAnim(duration)
-                    self.say(msg, 'black', duration);
+                    self.sayAndWait(msg, 'black', duration);
+                }));
+            interpreter.setProperty(globalObject, 'craft', interpreter.createNativeFunction(
+                function craft() {
+                    self.craft();
                 }));
         }
         myBot.interpreter = new Interpreter(code, initInterpreter);
+    }
+    sayAndWait(msg, color, duration) {
+        this.currentAction = new WaitAnim(duration)
+        this.say(msg, color, duration);
     }
     say(msg, color, duration) {
         this.cartoonBubble = { msg, color, duration: duration * 30 };
@@ -157,6 +168,37 @@ class Bot {
         ctx.fillStyle = this.cartoonBubble.color;
         ctx.font = "12px Verdana";
         ctx.fillText(this.cartoonBubble.msg, this.x, this.y - 10);
+    }
+    getCell() {
+        return { i: Math.floor(this.x / 48), j: Math.floor(this.y / 48) };
+    }
+    craft() {
+        const cell = this.getCell();
+        const building = map.getBuilding(cell);
+        if (building == null) {
+            this.sayAndWait("No craft building here", "red", 5);
+            return;
+        }
+        if (!building.recipe.hasItems(this)) {
+            this.sayAndWait("Missing ingredients to craft", "red", 5);
+            return;
+        }
+        building.recipe.consumeIngredients(this);
+        this.currentAction = new CraftAnim(this, building.recipe);
+
+    }
+    countItems(item) {
+        return this.bag.filter(b => item.name === item.name).length;
+    }
+    removeItems(item, count) {
+        let removed = 0;
+        for (let i = this.bag.length - 1; i >= 0; i--) {
+            if (this.bag[i].name == item.name && removed < count) {
+                removed++;
+                this.bag.splice(i, 1);
+            }
+        }
+        return removed;
     }
 }
 class MoveToAnim {
@@ -189,24 +231,58 @@ class WaitAnim {
         return this.duration <= 0;
     }
 }
+class CraftAnim {
+    constructor(bot, recipe) {
+        this.bot = bot;
+        this.recipe = recipe;
+        this.tick = 0;
+        this.maxTick = recipe.durationSec * 30;
+
+    }
+    update() {
+        this.tick++;
+        if (this.tick == this.maxTick) {
+            this.recipe.produceOutput(this.bot);            
+            return true;
+        }
+        return false;
+    }
+    paint() {
+        if (this.tick < this.maxTick) {
+            const left = this.bot.x;
+            const top = this.bot.y + 32;
+            ctx.beginPath();
+            ctx.lineWidth = "1";
+            ctx.fillStyle = "cyan";
+            ctx.rect(left, top, 32 * this.tick / this.maxTick, 6);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.lineWidth = "1";
+            ctx.strokeStyle = "green";
+            ctx.rect(left, top, 32, 6);
+            ctx.stroke();
+        }
+    }
+}
 
 let myBot = new Bot(300, 300);
 
 
-class Item{
-    constructor(name, sprite){
+class Item {
+    constructor(name, sprite) {
         this.name = name;
         this.sprite = sprite;
     }
-    paintSmall(x, y){
+    paintSmall(x, y) {
         const size = 16;
         ctx.fillStyle = "#0004";
         ctx.fillRect(x, y, size, size);
-        this.sprite.paintScale(x, y, size, size);  
+        this.sprite.paintScale(x, y, size, size);
     }
 }
-class Items{
-    constructor(){
+class Items {
+    constructor() {
         function getShikashiTile(i, j) {
             return new Sprite(shikashiTileSet, i * 32, j * 32, 32, 32);
         }
@@ -216,32 +292,49 @@ class Items{
 }
 const items = new Items();
 class ItemStackTile {
-    constructor(cell)
-    {
-        this.cell = cell;        
+    constructor(cell) {
+        this.cell = cell;
         this.buckets = [];
     }
-    add(item){
-        for(let b of this.buckets){
-            if(b.item.name === item.name){
+    add(item) {
+        for (let b of this.buckets) {
+            if (b.item.name === item.name) {
                 b.count++;
                 return;
             }
         }
-        this.buckets.push({item, count:1});
+        this.buckets.push({ item, count: 1 });
     }
-    paint(){
-        for(let i = 0; i<this.buckets.length; i++){
+    countItems(item) {
+        for (let b of this.buckets) {
+            if (b.item.name === item.name) {
+                return b.count;
+            }
+        }
+        return 0;
+    }
+    removeItems(item, count) {
+        for (let i = 0; i < this.buckets.length; i++) {
+            if (this.buckets[i].item.name == item.name) {
+                this.buckets[i].count -= count;
+                if (this.buckets[i].count <= 0) {
+                    this.buckets.splice(i, 1);
+                }
+            }
+        }
+    }
+    paint() {
+        for (let i = 0; i < this.buckets.length; i++) {
             const bucket = this.buckets[i];
             const x = Map.BorderX + this.cell.i * 48 + i * 17;
             const y = Map.BorderY + this.cell.j * 48 + 40;
             bucket.item.paintSmall(x, y);
-            if(bucket.count > 1){
+            if (bucket.count > 1) {
                 ctx.font = "11px Georgia";
-               // ctx.fillStyle = "yellow";
-               // ctx.fillText(bucket.count, x+7, y+15);
+                // ctx.fillStyle = "yellow";
+                // ctx.fillText(bucket.count, x+7, y+15);
                 ctx.fillStyle = "white";
-                ctx.fillText(bucket.count, x+8, y+14);
+                ctx.fillText(bucket.count, x + 8, y + 14);
             }
         }
     }
@@ -251,36 +344,74 @@ function getPipoTile(i, j) {
     return new Sprite(pipoBuildingTileSet, i * 48, j * 48);
 }
 const greenGroundSprite = getPipoTile(0, 0);
-const bigTreeSprite = getPipoTile(2, 1);
+
 const mineSprite = getPipoTile(7, 3);
 const smallHouseSprite = getPipoTile(0, 6);
 const farmSprite = getPipoTile(0, 7);
 
-
+class Recipe {
+    constructor(output, durationSec, inputs) {
+        this.output = output
+        this.durationSec = durationSec;
+        this.inputs = inputs;
+    }
+    countItems(item, bot) {
+        const onBot = bot.countItems(item) ;
+        const onMap = map.countItems(bot.getCell(), item);
+        return onBot + onMap;
+    }
+    hasItems(bot) {
+        for (let ingredient of this.inputs) {
+            if (this.countItems(ingredient.item, bot) < ingredient.count) {
+                return false;
+            }
+        }
+        return true;
+    }
+    consumeIngredients(bot) {
+        for (let ingredient of this.inputs) {
+            const removed = bot.removeItems(ingredient.item, ingredient.count);
+            const remaining = ingredient.count - removed;
+            if (remaining > 0) {
+                map.removeItems(bot.getCell(), ingredient.item, remaining);
+            }
+        }
+    }
+    produceOutput(bot){
+        map.addItemOnGround(bot.getCell(), this.output);
+    }
+}
 class BuildingTile {
-    constructor(i, j, sprite) {
-        this.i = i;
-        this.j = j;
-        this.sprite = sprite;        
+    constructor(i, j, sprite, recipe) {
+        this.cell = { i, j };
+        this.sprite = sprite;
+        this.recipe = recipe;
     }
     paint() {
-        this.sprite.paintNoScale(Map.BorderX + this.i * 48, Map.BorderY + this.j * 48);
+        this.sprite.paintNoScale(Map.BorderX + this.cell.i * 48, Map.BorderY + this.cell.j * 48);
     }
 }
 
-class TileFactory{
-    createBuildingTiles(){
-        return  [
+class TileFactory {
+    createBuildingTiles() {
+        return [
             new BuildingTile(1, 4, smallHouseSprite),
             new BuildingTile(0, 0, mineSprite),
-            new BuildingTile(2, 0, bigTreeSprite),
+            this.createAppleTree(),
             new BuildingTile(1, 8, farmSprite),
             this.createWaterWell(),
         ];
     }
-    createWaterWell(){
-        const waterWellSprite = getPipoTile(6, 1);
-        const tile =  new BuildingTile(0, 3, waterWellSprite);
+    createWaterWell() {
+        const sprite = getPipoTile(6, 1);
+        const recipe = new Recipe(items.water, 1.5, []);
+        const tile = new BuildingTile(0, 3, sprite, recipe);
+        return tile;
+    }
+    createAppleTree() {
+        const sprite = getPipoTile(2, 1);        
+        const recipe = new Recipe(items.apple, 1.5, [{item: items.water,  count:1}]);
+        const tile = new BuildingTile(2, 0, sprite, recipe);
         return tile;
     }
 }
@@ -290,7 +421,7 @@ class Map {
     static BorderY = 10;
     static MaxX = 16;
     static MaxY = 9;
-    constructor() {        
+    constructor() {
         this.buildingTiles = new TileFactory().createBuildingTiles();
         this.itemStacks = [];
     }
@@ -317,28 +448,48 @@ class Map {
             tile.paint();
         }
     }
-    getItemStackAt(cell){
-        for(let itemStack of this.itemStacks){
-            if(itemStack.cell.i === cell.i && itemStack.cell.j === cell.j){
+    getItemStackAt(cell) {
+        for (let itemStack of this.itemStacks) {
+            if (itemStack.cell.i === cell.i && itemStack.cell.j === cell.j) {
                 return itemStack;
             }
         }
         return null;
     }
-    addItemOnGround(cell, item){
-        let itemStack =  this.getItemStackAt(cell);
-        if(itemStack == null){
+    addItemOnGround(cell, item) {
+        let itemStack = this.getItemStackAt(cell);
+        if (itemStack == null) {
             itemStack = new ItemStackTile(cell);
             this.itemStacks.push(itemStack);
         }
         itemStack.add(item);
     }
+    countItems(cell, item) {
+        let itemStack = this.getItemStackAt(cell);
+        if (itemStack == null) {
+            return 0;
+        }
+        return itemStack.countItems(item);
+    }
+    removeItems(cell, item, count) {
+        let itemStack = this.getItemStackAt(cell);
+        itemStack.removeItems(item, count);
+    }
+    getBuilding(cell) {
+        for (let building of this.buildingTiles) {
+            if (building.cell.i === cell.i && building.cell.j === cell.j) {
+                return building;
+            }
+        }
+        return null;
+    }
 }
 let map = new Map();
 
-map.addItemOnGround({i:0, j:3}, items.water);
-map.addItemOnGround({i:0, j:3}, items.apple);
-map.addItemOnGround({i:0, j:3}, items.water);
+map.addItemOnGround({ i: 0, j: 3 }, items.water);
+map.addItemOnGround({ i: 0, j: 3 }, items.apple);
+map.addItemOnGround({ i: 0, j: 3 }, items.water);
+map.addItemOnGround({ i: 2, j: 0 }, items.water);
 
 function runCode() {
     const code = document.getElementById('code').value;
