@@ -13,7 +13,7 @@ function loadImg(name) {
     return img;
 }
 const dungeonTileSet = loadImg("0x72_DungeonTilesetII_v1.7x2");
-const itemsTileSet = loadImg("Shikashi");
+const shikashiTileSet = loadImg("Shikashi");
 const pipoBuildingTileSet = loadImg("pipo-map001");
 const pipoGroundTileSet = loadImg("pipo-map001_at");
 
@@ -41,13 +41,17 @@ class Sprite {
             this.tWidth, this.tHeight
         )
     }
+    paintScale(x, y, width, heigth) {
+        ctx.drawImage(this.tile,
+            this.tx, this.ty,
+            this.tWidth, this.tHeight,
+            x, y,
+            width, heigth
+        )
+    }
 }
 const healerSprite = new Sprite(dungeonTileSet, 256, 340, 32, 48);
-const greenGroundSprite = new Sprite(pipoBuildingTileSet, 0, 0);
-const bigTreeSprite = new Sprite(pipoBuildingTileSet, 2 * 48, 48);
-const mineSprite = new Sprite(pipoBuildingTileSet, 7 * 48, 3 * 48);
-const smallHouseSprite = new Sprite(pipoBuildingTileSet, 0, 6 * 48);
-const farmSprite = new Sprite(pipoBuildingTileSet, 0, 7 * 48);
+
 class PipoGoundTiles {
     constructor(index, name) {
         this.index = index;
@@ -102,10 +106,9 @@ class Bot {
         } else if (this.interpreter != null) {
             this.runCode();
         }
-        if(this.cartoonBubble){
+        if (this.cartoonBubble) {
             this.cartoonBubble.duration--;
-            if(this.cartoonBubble.duration <=0)
-            {
+            if (this.cartoonBubble.duration <= 0) {
                 this.cartoonBubble = null;
             }
         }
@@ -129,26 +132,26 @@ class Bot {
     }
     setCode(code) {
         const self = this;
-        function initInterpreter(interpreter, globalObject) {            
+        function initInterpreter(interpreter, globalObject) {
             interpreter.setProperty(globalObject, 'moveTo', interpreter.createNativeFunction(
                 function moveTo(cell_i, cell_j) {
                     self.currentAction = new MoveToAnim(self, cell_i, cell_j);
                     self.say(`Going to (${cell_i}, ${cell_j})`, 'yellow', 1)
-            }));
+                }));
             interpreter.setProperty(globalObject, 'say', interpreter.createNativeFunction(
                 function say(msg) {
                     const duration = 1.5;
                     self.currentAction = new WaitAnim(duration)
                     self.say(msg, 'black', duration);
-            }));
+                }));
         }
         myBot.interpreter = new Interpreter(code, initInterpreter);
     }
-    say(msg, color, duration){
-        this.cartoonBubble = {msg, color, duration: duration * 30};
+    say(msg, color, duration) {
+        this.cartoonBubble = { msg, color, duration: duration * 30 };
     }
-    paintCartoonBubble()    {
-        if(!this.cartoonBubble){
+    paintCartoonBubble() {
+        if (!this.cartoonBubble) {
             return;
         }
         ctx.fillStyle = this.cartoonBubble.color;
@@ -160,7 +163,7 @@ class MoveToAnim {
     constructor(item, cell_i, cell_j) {
         this.item = item;
         cell_i = Math.max(0, Math.min(Math.floor(cell_i), Map.MaxX - 1));
-        cell_j = Math.max(0, Math.min(Math.floor(cell_j), Map.MaxY - 1));      
+        cell_j = Math.max(0, Math.min(Math.floor(cell_j), Map.MaxY - 1));
         this.destX = Map.BorderX + cell_i * 48 + 8;
         this.destY = Map.BorderY + cell_j * 48 + 10;
         this.speed = 3;
@@ -190,16 +193,106 @@ class WaitAnim {
 let myBot = new Bot(300, 300);
 
 
+class Item{
+    constructor(name, sprite){
+        this.name = name;
+        this.sprite = sprite;
+    }
+    paintSmall(x, y){
+        const size = 16;
+        ctx.fillStyle = "yellow";
+        ctx.fillRect(x, y, size, size);
+        this.sprite.paintScale(x, y, size, size);  
+    }
+}
+class Items{
+    constructor(){
+        function getShikashiTile(i, j) {
+            return new Sprite(shikashiTileSet, i * 32, j * 32, 32, 32);
+        }
+        this.water = new Item("Water", getShikashiTile(10, 0));
+        this.apple = new Item("Apple", getShikashiTile(0, 14));
+    }
+}
+const items = new Items();
+class ItemStackTile {
+    constructor(cell)
+    {
+        this.cell = cell;        
+        this.buckets = [];
+    }
+    add(item){
+        for(let b of this.buckets){
+            if(b.item.name === item.name){
+                b.count++;
+                return;
+            }
+        }
+        this.buckets.push({item, count:1});
+    }
+    paint(){
+        for(let i = 0; i<this.buckets.length; i++){
+            const bucket = this.buckets[i];
+            const x = Map.BorderX + this.cell.i * 48 + i * 17;
+            const y = Map.BorderY + this.cell.j * 48 + 40;
+            bucket.item.paintSmall(x, y);
+            if(bucket.count > 1){
+                ctx.font = "14px Verdana";
+                ctx.fillStyle = "white";
+                ctx.fillText(bucket.count, x+7, y+15);
+                ctx.fillStyle = "black";
+                ctx.fillText(bucket.count, x+8, y+14);
+            }
+        }
+    }
+}
+
+function getPipoTile(i, j) {
+    return new Sprite(pipoBuildingTileSet, i * 48, j * 48);
+}
+const greenGroundSprite = getPipoTile(0, 0);
+const bigTreeSprite = getPipoTile(2, 1);
+const mineSprite = getPipoTile(7, 3);
+const smallHouseSprite = getPipoTile(0, 6);
+const farmSprite = getPipoTile(0, 7);
+
+
+class BuildingTile {
+    constructor(i, j, sprite) {
+        this.i = i;
+        this.j = j;
+        this.sprite = sprite;        
+    }
+    paint() {
+        this.sprite.paintNoScale(Map.BorderX + this.i * 48, Map.BorderY + this.j * 48);
+    }
+}
+
+class TileFactory{
+    createBuildingTiles(){
+        return  [
+            new BuildingTile(1, 4, smallHouseSprite),
+            new BuildingTile(0, 0, mineSprite),
+            new BuildingTile(2, 0, bigTreeSprite),
+            new BuildingTile(1, 8, farmSprite),
+            this.createWaterWell(),
+        ];
+    }
+    createWaterWell(){
+        const waterWellSprite = getPipoTile(6, 1);
+        const tile =  new BuildingTile(0, 3, waterWellSprite);
+        return tile;
+    }
+}
+
 class Map {
     static BorderX = 16;
     static BorderY = 10;
     static MaxX = 16;
     static MaxY = 9;
-    constructor() {
-        this.house = { i: 1, j: 4 };
-        this.mine = { i: 0, j: 0 };
-        this.wood = { i: 2, j: 0 };
-        this.farmSprite = { i: 1, j: 8};
+    constructor() {        
+        this.buildingTiles = new TileFactory().createBuildingTiles();
+        this.itemStacks = [];
     }
     paint() {
         waterTiles.paint(0, 0, Map.BorderX - 48, Map.BorderY - 48);
@@ -217,16 +310,35 @@ class Map {
             }
             waterTiles.paint(1, 2, Map.BorderX + i * 48, Map.BorderY + Map.MaxY * 48)
         }
-        this.paintAt(this.wood, bigTreeSprite);
-        this.paintAt(this.house, smallHouseSprite);
-        this.paintAt(this.mine, mineSprite);
-        this.paintAt(this.farmSprite, farmSprite);
+        for (let tile of this.buildingTiles) {
+            tile.paint();
+        }
+        for (let tile of this.itemStacks) {
+            tile.paint();
+        }
     }
-    paintAt(cell, sprite) {
-        sprite.paintNoScale(Map.BorderX + cell.i * 48, Map.BorderY + cell.j * 48)
+    getItemStackAt(cell){
+        for(let itemStack of this.itemStacks){
+            if(itemStack.cell.i === cell.i && itemStack.cell.j === cell.j){
+                return itemStack;
+            }
+        }
+        return null;
+    }
+    addItemOnGround(cell, item){
+        let itemStack =  this.getItemStackAt(cell);
+        if(itemStack == null){
+            itemStack = new ItemStackTile(cell);
+            this.itemStacks.push(itemStack);
+        }
+        itemStack.add(item);
     }
 }
 let map = new Map();
+
+map.addItemOnGround({i:0, j:3}, items.water);
+map.addItemOnGround({i:0, j:3}, items.apple);
+map.addItemOnGround({i:0, j:3}, items.water);
 
 function runCode() {
     const code = document.getElementById('code').value;
