@@ -134,7 +134,7 @@ class Bot {
         if (this.currentAction && this.currentAction.paint) {
             this.currentAction.paint();
         }
-        for(let i = 0; i < this.bag.length; i++){
+        for (let i = 0; i < this.bag.length; i++) {
             this.bag[i].paintSmallWithCount(this.x + 16 * i, this.y + 20, 1);
         }
     }
@@ -159,6 +159,11 @@ class Bot {
                 function take() {
                     self.take();
                 }));
+            interpreter.setProperty(globalObject, 'drop', interpreter.createNativeFunction(
+                function drop() {
+                    self.drop();
+                }));
+
 
         }
         myBot.interpreter = new Interpreter(code, initInterpreter);
@@ -218,8 +223,17 @@ class Bot {
         this.bag.push(item);
         while (this.bag.length > this.bagSize) {
             map.addItemOnGround(this.getCell(), this.bag[0]);
-            this.bag.slice(0, 1);
+            this.bag.splice(0, 1);
         }
+        this.currentAction = new WaitAnim(0.1);
+    }
+    drop(){
+        if(this.bag.length == 0){
+            this.sayAndWait("No item in bag to drop", "red", 5);
+            return;
+        }
+        map.addItemOnGround(this.getCell(), this.bag[0]);
+        this.bag.splice(0, 1);
         this.currentAction = new WaitAnim(0.1);
     }
 }
@@ -368,7 +382,7 @@ class ItemStackTile {
             const bucket = this.buckets[i];
             const x = Map.BorderX + this.cell.i * 48 + i * 17;
             const y = Map.BorderY + this.cell.j * 48 + 40;
-            bucket.item.paintSmallWithCount(x, y, bucket.count);         
+            bucket.item.paintSmallWithCount(x, y, bucket.count);
         }
     }
 }
@@ -433,6 +447,7 @@ class TileFactory {
             this.createAppleTree(),
             new BuildingTile(1, 8, farmSprite),
             this.createWaterWell(),
+            this.createPyramid(),
         ];
     }
     createWaterWell() {
@@ -445,6 +460,11 @@ class TileFactory {
         const sprite = getPipoTile(2, 1);
         const recipe = new Recipe(items.apple, 1.5, [{ item: items.water, count: 1 }]);
         const tile = new BuildingTile(2, 0, sprite, recipe);
+        return tile;
+    }
+    createPyramid(){
+        const sprite = getPipoTile(1, 10);        
+        const tile = new BuildingTile(7, 4, sprite, null);
         return tile;
     }
 }
@@ -525,12 +545,11 @@ class Map {
     }
 }
 let map = new Map();
-
 map.addItemOnGround({ i: 0, j: 3 }, items.water);
-map.addItemOnGround({ i: 0, j: 3 }, items.apple);
 map.addItemOnGround({ i: 0, j: 3 }, items.water);
+map.addItemOnGround({ i: 2, j: 0 }, items.apple);
 map.addItemOnGround({ i: 2, j: 0 }, items.water);
-map.addItemOnGround({ i: 6, j: 6 }, items.water);
+
 
 function runCode() {
     const code = document.getElementById('code').value;
