@@ -81,13 +81,16 @@ const waterTiles = new PipoGoundTiles(5, "water");
 
 const tickDuration = 1000.0 / 30;
 function tick() {
-    myBot.update();
+    for(let bot of bots){
+        bot.update();
+    }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     map.paint();
-    myBot.paint();
+    for(let bot of bots){
+        bot.paint();
+    }
     setTimeout(tick, tickDuration);
 }
-
 
 class Bot {
     constructor(x, y) {
@@ -117,7 +120,7 @@ class Bot {
     }
     runCode() {
         for (let i = 0; i < 200; i++) {
-            if (this.interpreter == null || myBot.currentAction != null) {
+            if (this.interpreter == null || this.currentAction != null) {
                 return;
             }
             if (!this.interpreter.step()) {
@@ -162,14 +165,12 @@ class Bot {
                 function drop() {
                     self.drop();
                 }));
-
-
         }
-        myBot.interpreter = new Interpreter(code, initInterpreter);
+        self.interpreter = new Interpreter(code, initInterpreter);
     }
     moveTo(cell_i, cell_j) {
         const target = map.getTarget(cell_i, cell_j);
-        if(target == null){
+        if (target == null) {
             this.sayAndWait(`Target not found: ${cell_i} ${cell_j}`, "red", 5);
             return;
         }
@@ -198,7 +199,7 @@ class Bot {
     craft() {
         const cell = this.getCell();
         const building = map.getBuilding(cell);
-        if (building == null) {
+        if (building == null || building.recipe == null) {
             this.sayAndWait("No craft building here", "red", 5);
             return;
         }
@@ -244,6 +245,7 @@ class Bot {
         map.addItemOnGround(this.getCell(), this.bag[0]);
         this.bag.splice(0, 1);
         this.currentAction = new WaitAnim(0.1);
+        headquarters.update();
     }
 }
 class MoveToAnim {
@@ -311,7 +313,7 @@ class CraftAnim {
     }
 }
 
-let myBot = new Bot(300, 300);
+const bots = [new Bot(300, 300)];
 
 
 class Item {
@@ -457,7 +459,7 @@ class TileFactory {
             this.createAppleTree(),
             new BuildingTile("farm", { i: 1, j: 8 }, farmSprite),
             this.createWaterWell(),
-            this.createPyramid(),
+            //  this.createPyramid(),
         ];
     }
     createWaterWell() {
@@ -478,6 +480,86 @@ class TileFactory {
         return tile;
     }
 }
+class Mission {
+    constructor(id, ingredients, onSuccessFunc) {
+        this.id = id;
+        this.ingredients = ingredients;
+        this.onSuccessFunc = onSuccessFunc;
+        this.progress = ingredients.map(function(ing) {
+            return  {item: ing.item, count: 0, max: ing.count };
+        });
+        this.progressPercent = 0;
+    }
+    addProgress(item) {
+
+        const p = this.progress.find(pr => pr.item.name == item.name);
+        if(!p || p.count >= p.max){
+            return;
+        }
+        p.count++;
+        this.refreshProgress();
+    }
+    refreshProgress(){
+        let finished = true;
+        let items = 0;
+        let total = 0;
+        for(let p of this.progress){
+            if(p.count < p.max){
+                finished = false;
+            }
+            items += p.count;
+            total += p.max;
+        }
+        this.progressPercent = items * 100 / total;
+        if(finished){
+            this.progressPercent = 0;
+            for(let p of this.progress){
+                p.count = 0;
+            }
+            this.onSuccessFunc();
+        }
+    }
+}
+class Headquarters {
+    constructor() {
+        this.name = "Headquarters";
+        this.cell = { i: 7, j: 4 }
+        this.sprite = getPipoTile(1, 10);
+        this.mission = new Mission(1, [{ item: items.apple, count: 2 }], () => this.missionEnded());
+    }
+    paint() {
+        const topX = Map.BorderX + this.cell.i * 48;
+        const topY = Map.BorderY + this.cell.j * 48;
+        this.sprite.paintNoScale(topX, topY);
+        if(this.mission.progressPercent != 0){
+            const left = topX;
+            const top = topY + 48;
+            ctx.beginPath();
+            ctx.lineWidth = "1";
+            ctx.fillStyle = "cyan";
+            ctx.rect(left, top, 48 * this.mission.progressPercent / 100, 6);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.lineWidth = "1";
+            ctx.strokeStyle = "green";
+            ctx.rect(left, top, 48, 6);
+            ctx.stroke();
+        }
+    }
+    update() {
+        let item;
+        while ((item = map.takeItem(this.cell)) != null) {
+            this.mission.addProgress(item);
+        }
+    }
+    missionEnded() {
+        const x = headquarters.cell.i * 48 + 48;
+        const y = headquarters.cell.j * 48 + 16;
+        bots.push(new Bot(x + Math.floor(Math.random() * 48), y + Math.floor(Math.random() * 48)));
+    }
+}
+const headquarters = new Headquarters();
 
 class Map {
     static BorderX = 16;
@@ -510,6 +592,7 @@ class Map {
         for (let tile of this.itemStacks) {
             tile.paint();
         }
+        headquarters.paint();
     }
     getItemStackAt(cell) {
         for (let itemStack of this.itemStacks) {
@@ -560,6 +643,9 @@ class Map {
                     return { building, cell: building.cell };
                 }
             }
+            if (headquarters.name.toLowerCase() == a.toLowerCase()) {
+                return { building: headquarters, cell: headquarters.cell };
+            }
             return null;
         } else {
             const cell_i = Math.max(0, Math.min(Math.floor(a), Map.MaxX - 1));
@@ -582,6 +668,6 @@ map.addItemOnGround({ i: 2, j: 0 }, items.water);
 
 function runCode() {
     const code = document.getElementById('code').value;
-    myBot.setCode(code);
+    bots[0].setCode(code);
 }
 tick();
