@@ -2,6 +2,7 @@ const gameDuration = 30.0;
 const CanvasWidth = 800;
 const CanvasHeight = 450;
 const canvas = document.getElementById("myCanvas");
+canvas.onmousedown = onmousedown;
 const ctx = canvas.getContext("2d");
 
 function square(x) {
@@ -101,6 +102,8 @@ class Bot {
         this.cartoonBubble = null;
         this.bag = [];
         this.bagSize = 2;
+        this.code = null;
+        this.sprite = healerSprite;
     }
     update() {
         if (this.currentAction != null) {
@@ -132,7 +135,7 @@ class Bot {
         console.log("timeout");
     }
     paint() {
-        healerSprite.paint32(this.x, this.y);
+        this.sprite.paint32(this.x, this.y);
         this.paintCartoonBubble();
         if (this.currentAction && this.currentAction.paint) {
             this.currentAction.paint();
@@ -141,8 +144,9 @@ class Bot {
             this.bag[i].paintSmallWithCount(this.x + 16 * i, this.y + 20, 1);
         }
     }
-    setCode(code) {
+    setCode(code) {        
         const self = this;
+        this.code = code;
         function initInterpreter(interpreter, globalObject) {
             interpreter.setProperty(globalObject, 'moveTo', interpreter.createNativeFunction(
                 function moveTo(cell_i, cell_j) {
@@ -246,6 +250,10 @@ class Bot {
         this.bag.splice(0, 1);
         this.currentAction = new WaitAnim(0.1);
         headquarters.update();
+    }
+    isInside(event) {        
+        return event.offsetX >= this.x && event.offsetX < this.x + this.sprite.tWidth
+            && event.offsetY >= this.y && event.offsetY < this.y + this.sprite.tHeight
     }
 }
 class MoveToAnim {
@@ -459,7 +467,6 @@ class TileFactory {
             this.createAppleTree(),
             new BuildingTile("farm", { i: 1, j: 8 }, farmSprite),
             this.createWaterWell(),
-            //  this.createPyramid(),
         ];
     }
     createWaterWell() {
@@ -472,11 +479,6 @@ class TileFactory {
         const sprite = getPipoTile(2, 1);
         const recipe = new Recipe(items.apple, 1.5, [{ item: items.water, count: 1 }]);
         const tile = new BuildingTile("tree", { i: 2, j: 0 }, sprite, recipe);
-        return tile;
-    }
-    createPyramid() {
-        const sprite = getPipoTile(1, 10);
-        const tile = new BuildingTile("pyramid", { i: 7, j: 4 }, sprite, null);
         return tile;
     }
 }
@@ -557,6 +559,11 @@ class Headquarters {
         const x = headquarters.cell.i * 48 + 48;
         const y = headquarters.cell.j * 48 + 16;
         bots.push(new Bot(x + Math.floor(Math.random() * 48), y + Math.floor(Math.random() * 48)));
+        
+        this.mission = new Mission(
+            this.mission.id + 1, 
+            [{ item: items.apple, count: 3 * this.mission.id * this.mission.id }], 
+            () => this.missionEnded());
     }
 }
 const headquarters = new Headquarters();
@@ -665,9 +672,20 @@ map.addItemOnGround({ i: 0, j: 3 }, items.water);
 map.addItemOnGround({ i: 2, j: 0 }, items.apple);
 map.addItemOnGround({ i: 2, j: 0 }, items.water);
 
-
+let selectedBot = bots[0];
 function runCode() {
     const code = document.getElementById('code').value;
-    bots[0].setCode(code);
+    selectedBot.setCode(code);
 }
 tick();
+function onmousedown(event){
+    for(let bot of bots){
+        if (bot.isInside(event)) {
+            if(selectedBot != bot){
+                selectedBot.code = document.getElementById('code').value;
+                selectedBot = bot;
+                document.getElementById('code').value = bot.code;            
+            }
+        }
+    }
+}
