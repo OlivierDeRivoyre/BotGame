@@ -246,7 +246,7 @@ class Bot {
 
     }
     countItems(item) {
-        return this.bag.filter(b => item.name === item.name).length;
+        return this.bag.filter(b => b.name === item.name).length;
     }
     removeItems(item, count) {
         let removed = 0;
@@ -371,7 +371,7 @@ class Item {
             ctx.fillText(count, x + 8, y + 14);
         }
     }
-    paintForTooltip(x, y, count){
+    paintForTooltip(x, y, count) {
         const size = 32;
         ctx.fillStyle = "#fff4";
         ctx.fillRect(x, y, size, size);
@@ -515,21 +515,21 @@ class BuildingTile {
         const moveTxt = `moveTo(${this.cell.i}, ${this.cell.i})`;
         ctx.fillText(moveTxt, cursorX, cursorY);
         cursorY += 16;
-        
+
         ctx.fillStyle = "white";
         ctx.font = "12px Verdana";
         const craftTxt = `craft() ${this.recipe.output.name}  in ${this.recipe.durationSec} sec`;
         ctx.fillText(craftTxt, cursorX, cursorY);
         cursorY += 16;
-        
+
         let x = cursorX;
-        for(let i = 0; i < this.recipe.inputs.length; i++){
+        for (let i = 0; i < this.recipe.inputs.length; i++) {
             x = cursorX + i * 33;
             this.recipe.inputs[i].item.paintForTooltip(x, cursorY, this.recipe.inputs[i].count);
-            x += 40 
-        }        
+            x += 40
+        }
         ctx.fillStyle = "white";
-        ctx.font = "20px consolas";        
+        ctx.font = "20px consolas";
         ctx.fillText("=>", x, cursorY + 22);
         this.recipe.output.paintForTooltip(x + 30, cursorY);
     }
@@ -704,19 +704,19 @@ class Headquarters {
 
         ctx.fillStyle = "white";
         ctx.font = "12px Verdana";
-        const moveTxt = `Level ${this.mission.id} ${this.mission.progressPercent }% - moveTo(${this.cell.i}, ${this.cell.i}); drop();`;
+        const moveTxt = `Level ${this.mission.id} ${this.mission.progressPercent}% - moveTo(${this.cell.i}, ${this.cell.i}); drop();`;
         ctx.fillText(moveTxt, cursorX, cursorY);
         cursorY += 16;
-        
+
         ctx.fillStyle = "white";
         ctx.font = "12px Verdana";
         const craftTxt = `Objective:`;
         ctx.fillText(craftTxt, cursorX, cursorY);
         cursorY += 16;
-                
-        for(let i = 0; i < this.mission.progress.length; i++){     
-            const p = this.mission.progress[i];     
-            p.item.paintForTooltip(cursorX, cursorY, 1);        
+
+        for (let i = 0; i < this.mission.progress.length; i++) {
+            const p = this.mission.progress[i];
+            p.item.paintForTooltip(cursorX, cursorY, 1);
             ctx.fillStyle = "white";
             ctx.font = "12px Verdana";
             const pTxt = `${p.count} / ${p.max}`;
@@ -734,8 +734,20 @@ class Headquarters {
         this.addNewBot();
         this.mission = new Mission(
             this.mission.id + 1,
-            [{ item: items.apple, count: 3 * this.mission.id * this.mission.id }],
+            this.createMissionIngredients(this.mission.id + 1),
             () => this.missionEnded());
+    }
+    createMissionIngredients(lvl) {
+        const appleRequired = 2 * lvl * lvl;
+        const clothLevel = lvl - 3;
+        if (clothLevel <= 0) {
+            return [{ item: items.apple, count: appleRequired }];
+        }
+
+        let clothRequired = clothLevel * clothLevel;
+        return [
+            { item: items.apple, count: appleRequired },
+            { item: items.cloth, count: clothRequired }];
     }
     addNewBot() {
         const coord = map.getCoord(this.cell);
@@ -819,6 +831,9 @@ class Map {
     }
     removeItems(cell, item, count) {
         let itemStack = this.getItemStackAt(cell);
+        if(itemStack == null){
+            return;
+        }
         itemStack.removeItems(item, count);
     }
     takeItem(cell) {
@@ -858,12 +873,12 @@ class Map {
             return { building: null, cell: { i: cell_i, j: cell_j } };
         }
     }
-    click(event){
-        for(let building of this.buildingTiles){           
-           if(this.isInside(event, building.cell)){
+    click(event) {
+        for (let building of this.buildingTiles) {
+            if (this.isInside(event, building.cell)) {
                 tooltip.selection = building;
                 return;
-           }
+            }
         }
         tooltip.selection = null;
     }
@@ -906,7 +921,7 @@ function runCode(applyAll) {
     }
 }
 tick();
-function onmousedown(event) {    
+function onmousedown(event) {
     for (let bot of bots) {
         if (bot.isInside(event)) {
             if (selectedBot != bot) {
@@ -919,10 +934,10 @@ function onmousedown(event) {
         }
     }
     if (map.isInside(event, headquarters.cell)) {
+        tooltip.selection = headquarters;
         if (selectedBot != headquarters) {
             selectedBot.code = document.getElementById('code').value;
-            selectedBot = headquarters;
-            tooltip.selection = headquarters;
+            selectedBot = headquarters;            
             document.getElementById('code').value = selectedBot.code;
             document.getElementById('applyOnlyTo').innerText = `For Headquarters, aka new bots`;
             return;
