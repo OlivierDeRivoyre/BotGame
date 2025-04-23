@@ -14,7 +14,9 @@
 <body>
     <canvas id="myCanvas" width="800" height="450" class="board"></canvas>
     <br>
-    <textarea id="code" spellcheck="false" rows="12" cols="80">
+    <div style="display: flex;">
+        <div style="flex-grow: 1;">
+            <textarea id="code" spellcheck="false" rows="12" cols="80">
 while(true){
     moveTo("well");
     craft();
@@ -25,11 +27,38 @@ while(true){
     moveTo("Headquarters");
     drop();
 }
-    </textarea>
-    <br>
-    <button onclick="runCode()" id="runButton">Run</button>
-    <!--<button onclick="stepButton()" id="stepButton" disabled="disabled">Step</button>
+            </textarea>
+            <br>
+            <button onclick="runCode(document.getElementById('applyAll').checked)" id="runButton">Run</button>
+            <input type="checkbox" id="applyAll" />Apply all
+            <!--<button onclick="stepButton()" id="stepButton" disabled="disabled">Step</button>
     <button onclick="clear()">Clear</button>-->
+        </div>
+        <div>
+Sample of code:
+            <code><pre>
+var newName = "Bot" + getId();
+switch(getId()){
+  case 1: newName = "Alan"; break
+  case 2: newName = "Bob"; break
+  case 3: newName = "Carl"; break
+}
+setName(newName);
+moveTo(getId() % 16, 6 + Math.floor(getId() / 16));
+say("Hello, I'm " + getName());
+while(true){ 
+    moveTo("well");
+    craft();
+    take();
+    moveTo("tree");
+    craft();
+    take();
+    moveTo("Headquarters");
+    drop();
+}
+        </pre></code>
+        </div>
+    </div>
 </body>
 <script src="./libs/acorn.js"></script>
 <script src="./libs/interpreter.js"></script>

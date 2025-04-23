@@ -94,16 +94,18 @@ function tick() {
 }
 
 class Bot {
-    constructor(x, y) {
+    constructor(id, x, y) {
+        this.id = id;
         this.x = x;
         this.y = y;
+        this.name = "Bot " + id;
         this.currentAction = null;
         this.interpreter = null;
         this.cartoonBubble = null;
         this.bag = [];
         this.bagSize = 2;
         this.code = null;
-        this.sprite = healerSprite;
+        this.sprite = healerSprite;       
     }
     update() {
         if (this.currentAction != null) {
@@ -143,6 +145,9 @@ class Bot {
         for (let i = 0; i < this.bag.length; i++) {
             this.bag[i].paintSmallWithCount(this.x + 16 * i, this.y + 20, 1);
         }
+        ctx.font = "10px Georgia";
+        ctx.fillStyle = "#eee";
+        ctx.fillText(this.name, this.x + 8, this.y + this.sprite.tHeight - 8);
     }
     setCode(code) {        
         const self = this;
@@ -168,6 +173,20 @@ class Bot {
             interpreter.setProperty(globalObject, 'drop', interpreter.createNativeFunction(
                 function drop() {
                     self.drop();
+                }));
+            interpreter.setProperty(globalObject, 'getId', interpreter.createNativeFunction(
+                function getId() {
+                    return self.id;
+                }));
+            interpreter.setProperty(globalObject, 'getName', interpreter.createNativeFunction(
+                function getName() {
+                    return self.name;
+                }));
+            interpreter.setProperty(globalObject, 'setName', interpreter.createNativeFunction(
+                function setName(name) {
+                    if(name){
+                        self.name = name;
+                    }
                 }));
         }
         self.interpreter = new Interpreter(code, initInterpreter);
@@ -256,6 +275,8 @@ class Bot {
             && event.offsetY >= this.y && event.offsetY < this.y + this.sprite.tHeight
     }
 }
+const bots = [new Bot(1, 300, 300)];
+
 class MoveToAnim {
     constructor(item, cell_i, cell_j) {
         this.item = item;
@@ -320,9 +341,6 @@ class CraftAnim {
         }
     }
 }
-
-const bots = [new Bot(300, 300)];
-
 
 class Item {
     constructor(name, sprite) {
@@ -558,8 +576,9 @@ class Headquarters {
     missionEnded() {
         const x = headquarters.cell.i * 48 + 48;
         const y = headquarters.cell.j * 48 + 16;
-        bots.push(new Bot(x + Math.floor(Math.random() * 48), y + Math.floor(Math.random() * 48)));
-        
+        bots.push(new Bot(bots.length + 1, 
+            x + Math.floor(Math.random() * 48),
+            y + Math.floor(Math.random() * 48)));        
         this.mission = new Mission(
             this.mission.id + 1, 
             [{ item: items.apple, count: 3 * this.mission.id * this.mission.id }], 
@@ -673,9 +692,15 @@ map.addItemOnGround({ i: 2, j: 0 }, items.apple);
 map.addItemOnGround({ i: 2, j: 0 }, items.water);
 
 let selectedBot = bots[0];
-function runCode() {
+function runCode(applyAll) {
     const code = document.getElementById('code').value;
-    selectedBot.setCode(code);
+    if(applyAll){
+        for(let bot of bots){
+            bot.setCode(code);
+        }
+    } else{
+        selectedBot.setCode(code);
+    }
 }
 tick();
 function onmousedown(event){
