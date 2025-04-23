@@ -18,6 +18,12 @@ const shikashiTileSet = loadImg("Shikashi");
 const pipoBuildingTileSet = loadImg("pipo-map001");
 const pipoGroundTileSet = loadImg("pipo-map001_at");
 
+function getShikashiTile(i, j) {
+    return new Sprite(shikashiTileSet, i * 32, j * 32, 32, 32);
+}
+function getPipoTile(i, j) {
+    return new Sprite(pipoBuildingTileSet, i * 48, j * 48);
+}
 class Sprite {
     constructor(tile, tx, ty, tWidth, tHeight) {
         this.tile = tile;
@@ -161,6 +167,10 @@ class Bot {
                 function say(msg) {
                     const duration = 1.5;
                     self.sayAndWait(msg, 'black', duration);
+                }));
+            interpreter.setProperty(globalObject, 'wait', interpreter.createNativeFunction(
+                function wait(duration) {
+                    self.sayAndWait(`waiting ${duration} sec`, 'black', duration);
                 }));
             interpreter.setProperty(globalObject, 'craft', interpreter.createNativeFunction(
                 function craft() {
@@ -363,11 +373,17 @@ class Item {
 }
 class Items {
     constructor() {
-        function getShikashiTile(i, j) {
-            return new Sprite(shikashiTileSet, i * 32, j * 32, 32, 32);
-        }
         this.water = new Item("Water", getShikashiTile(10, 0));
         this.apple = new Item("Apple", getShikashiTile(0, 14));
+        this.sand = new Item("Sand", getShikashiTile(11, 20));
+        this.flask = new Item("Flask", getShikashiTile(3, 19));
+        this.ironOre = new Item("IronOre", getShikashiTile(2, 17));
+        this.powder = new Item("Powder", getShikashiTile(2, 20));
+        this.ink = new Item("Ink", getShikashiTile(5, 19));
+        this.coton = new Item("Coton", getShikashiTile(5, 17));
+        this.spool = new Item("Spool", getShikashiTile(1, 22));
+        this.blueSpool = new Item("BlueSpool", getShikashiTile(2, 22));
+        this.cloth = new Item("Cloth", getShikashiTile(8, 7));
     }
 }
 const items = new Items();
@@ -424,13 +440,9 @@ class ItemStackTile {
     }
 }
 
-function getPipoTile(i, j) {
-    return new Sprite(pipoBuildingTileSet, i * 48, j * 48);
-}
+
 const greenGroundSprite = getPipoTile(0, 0);
 
-const mineSprite = getPipoTile(7, 3);
-const smallHouseSprite = getPipoTile(0, 6);
 const farmSprite = getPipoTile(0, 7);
 
 class Recipe {
@@ -480,11 +492,17 @@ class BuildingTile {
 class TileFactory {
     createBuildingTiles() {
         return [
-            new BuildingTile("house", { i: 1, j: 4 }, smallHouseSprite),
-            new BuildingTile("mine", { i: 0, j: 0 }, mineSprite),
             this.createAppleTree(),
-            new BuildingTile("farm", { i: 1, j: 8 }, farmSprite),
             this.createWaterWell(),
+            this.createDune(),
+            this.createCotonField(),
+            this.createClothFactory(),
+            this.createFire(),
+            this.createMine(),
+            this.createAnvil(),
+            this.createLoom(),
+            this.createMortar(),
+            this.createCauldron(),
         ];
     }
     createWaterWell() {
@@ -497,6 +515,67 @@ class TileFactory {
         const sprite = getPipoTile(2, 1);
         const recipe = new Recipe(items.apple, 1.5, [{ item: items.water, count: 1 }]);
         const tile = new BuildingTile("tree", { i: 2, j: 0 }, sprite, recipe);
+        return tile;
+    }
+    createDune() {
+        const sprite = getPipoTile(2, 0);
+        const recipe = new Recipe(items.sand, 0.3, []);
+        const tile = new BuildingTile("dune", { i: 15, j: 0 }, sprite, recipe);
+        return tile;
+    }
+    createCotonField() {
+        const sprite = getPipoTile(1, 0);
+        const recipe = new Recipe(items.coton, 1.5, [{ item: items.water, count: 1 }]);
+        const tile = new BuildingTile("cotonField", { i: 0, j: 8 }, sprite, recipe);
+        return tile;
+    }
+    createClothFactory() {
+        const sprite = getPipoTile(0, 6);
+        const recipe = new Recipe(items.cloth, 3, [
+            { item: items.blueSpool, count: 4 },
+            { item: items.spool, count: 1 }]);
+        const tile = new BuildingTile("clothFactory", { i: 9, j: 5 }, sprite, recipe);
+        return tile;
+    }
+    createFire() {
+        const sprite = getShikashiTile(2, 4);
+        const recipe = new Recipe(items.flask, 2, [{ item: items.sand, count: 1 }]);
+        const tile = new BuildingTile("fire", { i: 14, j: 4 }, sprite, recipe);
+        return tile;
+    }
+    createMine() {
+        const sprite = getPipoTile(7, 3);
+        const recipe = new Recipe(items.ironOre, 1.7, []);
+        const tile = new BuildingTile("mine", { i: 8, j: 0 }, sprite, recipe);
+        return tile;
+    }
+    createAnvil(){
+        const sprite = getShikashiTile(4, 4);
+        const recipe = new Recipe(items.powder, 1, [{ item: items.ironOre, count: 1 }]);
+        const tile = new BuildingTile("anvil", { i: 9, j: 2 }, sprite, recipe);
+        return tile;
+    }
+    createLoom(){
+        const sprite = getShikashiTile(11, 16);
+        const recipe = new Recipe(items.spool, 1, [{ item: items.coton, count: 2 }]);
+        const tile = new BuildingTile("loom", { i: 3, j: 7 }, sprite, recipe);
+        return tile;
+    }
+    createMortar(){
+        const sprite = getShikashiTile(12, 11);
+        const recipe = new Recipe(items.ink, 1, [
+            { item: items.powder, count: 1 },
+            { item: items.water, count: 1 },
+            { item: items.flask, count: 1 }]);
+        const tile = new BuildingTile("mortar", { i: 11, j: 3 }, sprite, recipe);
+        return tile;
+    }
+    createCauldron(){
+        const sprite = getShikashiTile(9, 19);
+        const recipe = new Recipe(items.blueSpool, 1, [
+            { item: items.spool, count: 1 },
+            { item: items.ink, count: 1 }]);
+        const tile = new BuildingTile("cauldron", { i: 6, j: 8 }, sprite, recipe);
         return tile;
     }
 }
@@ -704,10 +783,17 @@ class Map {
     }
 }
 let map = new Map();
-map.addItemOnGround({ i: 0, j: 3 }, items.water);
-map.addItemOnGround({ i: 0, j: 3 }, items.water);
-map.addItemOnGround({ i: 2, j: 0 }, items.apple);
-map.addItemOnGround({ i: 2, j: 0 }, items.water);
+map.addItemOnGround({ i: 0, j: 5 }, items.water);
+map.addItemOnGround({ i: 0, j: 5 }, items.apple);
+map.addItemOnGround({ i: 0, j: 5 }, items.sand);
+map.addItemOnGround({ i: 0, j: 5 }, items.flask);
+map.addItemOnGround({ i: 0, j: 5 }, items.ink);
+map.addItemOnGround({ i: 0, j: 5 }, items.ironOre);
+map.addItemOnGround({ i: 0, j: 5 }, items.coton);
+map.addItemOnGround({ i: 0, j: 5 }, items.spool);
+map.addItemOnGround({ i: 0, j: 5 }, items.blueSpool);
+map.addItemOnGround({ i: 0, j: 5 }, items.cloth);
+
 
 let selectedBot = bots[0];
 function runCode(applyAll) {

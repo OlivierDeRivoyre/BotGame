@@ -35,7 +35,7 @@ while(true){
             <!--<button onclick="stepButton()" id="stepButton" disabled="disabled">Step</button>
     <button onclick="clear()">Clear</button>-->
         </div>
-        <div>
+        <div>           
 Sample of code:
             <code><pre>
 var newName = "Bot" + getId();
@@ -47,6 +47,7 @@ switch(getId()){
 setName(newName);
 moveTo((getId() - 1) % 16, 8);
 say("Hello, I'm " + getName());
+wait(getId());
 while(true){ 
     moveTo("well");
     craft();
