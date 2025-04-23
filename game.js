@@ -96,6 +96,7 @@ function tick() {
     for (let bot of bots) {
         bot.paint();
     }
+    tooltip.paint();
     setTimeout(tick, tickDuration);
 }
 
@@ -370,6 +371,19 @@ class Item {
             ctx.fillText(count, x + 8, y + 14);
         }
     }
+    paintForTooltip(x, y, count){
+        const size = 32;
+        ctx.fillStyle = "#fff4";
+        ctx.fillRect(x, y, size, size);
+        this.sprite.paintScale(x, y, size, size);
+        if (count > 1) {
+            ctx.font = "20px Georgia";
+            // ctx.fillStyle = "yellow";
+            // ctx.fillText(bucket.count, x+7, y+15);
+            ctx.fillStyle = "yellow";
+            ctx.fillText(count, x + 14, y + 28);
+        }
+    }
 }
 class Items {
     constructor() {
@@ -487,6 +501,38 @@ class BuildingTile {
     paint() {
         this.sprite.paintNoScale(Map.BorderX + this.cell.i * 48, Map.BorderY + this.cell.j * 48);
     }
+    paintTooltip(tooltip) {
+        let cursorY = tooltip.y + 22;
+        let cursorX = tooltip.x + 8;
+
+        ctx.fillStyle = "orange";
+        ctx.font = "bold 18px Verdana";
+        ctx.fillText(this.name, cursorX, cursorY);
+        cursorY += 18;
+
+        ctx.fillStyle = "white";
+        ctx.font = "12px Verdana";
+        const moveTxt = `moveTo(${this.cell.i}, ${this.cell.i})`;
+        ctx.fillText(moveTxt, cursorX, cursorY);
+        cursorY += 16;
+        
+        ctx.fillStyle = "white";
+        ctx.font = "12px Verdana";
+        const craftTxt = `craft() ${this.recipe.output.name}  in ${this.recipe.durationSec} sec`;
+        ctx.fillText(craftTxt, cursorX, cursorY);
+        cursorY += 16;
+        
+        let x = cursorX;
+        for(let i = 0; i < this.recipe.inputs.length; i++){
+            x = cursorX + i * 33;
+            this.recipe.inputs[i].item.paintForTooltip(x, cursorY, this.recipe.inputs[i].count);
+            x += 40 
+        }        
+        ctx.fillStyle = "white";
+        ctx.font = "20px consolas";        
+        ctx.fillText("=>", x, cursorY + 22);
+        this.recipe.output.paintForTooltip(x + 30, cursorY);
+    }
 }
 
 class TileFactory {
@@ -549,19 +595,19 @@ class TileFactory {
         const tile = new BuildingTile("mine", { i: 8, j: 0 }, sprite, recipe);
         return tile;
     }
-    createAnvil(){
+    createAnvil() {
         const sprite = getShikashiTile(4, 4);
         const recipe = new Recipe(items.powder, 1, [{ item: items.ironOre, count: 1 }]);
         const tile = new BuildingTile("anvil", { i: 9, j: 2 }, sprite, recipe);
         return tile;
     }
-    createLoom(){
+    createLoom() {
         const sprite = getShikashiTile(11, 16);
         const recipe = new Recipe(items.spool, 1, [{ item: items.coton, count: 2 }]);
         const tile = new BuildingTile("loom", { i: 3, j: 7 }, sprite, recipe);
         return tile;
     }
-    createMortar(){
+    createMortar() {
         const sprite = getShikashiTile(12, 11);
         const recipe = new Recipe(items.ink, 1, [
             { item: items.powder, count: 1 },
@@ -570,7 +616,7 @@ class TileFactory {
         const tile = new BuildingTile("mortar", { i: 11, j: 3 }, sprite, recipe);
         return tile;
     }
-    createCauldron(){
+    createCauldron() {
         const sprite = getShikashiTile(9, 19);
         const recipe = new Recipe(items.blueSpool, 1, [
             { item: items.spool, count: 1 },
@@ -668,11 +714,6 @@ class Headquarters {
         bot.setCode(this.code);
         bots.push(bot);
     }
-    isInside(event) {
-        const coord = map.getCoord(this.cell);
-        return event.offsetX >= coord.x && event.offsetX < coord.x + coord.width
-            && event.offsetY >= coord.y && event.offsetY < coord.y + coord.height
-    }
     setCode(code) {
         this.code = code;
     }
@@ -716,6 +757,11 @@ class Map {
         const x = Map.BorderX + cell.i * 48;
         const y = Map.BorderY + cell.j * 48;
         return { x, y, width: 48, height: 48 };
+    }
+    isInside(event, cell) {
+        const coord = this.getCoord(cell);
+        return event.offsetX >= coord.x && event.offsetX < coord.x + coord.width
+            && event.offsetY >= coord.y && event.offsetY < coord.y + coord.height
     }
     getItemStackAt(cell) {
         for (let itemStack of this.itemStacks) {
@@ -781,19 +827,40 @@ class Map {
             return { building: null, cell: { i: cell_i, j: cell_j } };
         }
     }
+    click(event){
+        for(let building of this.buildingTiles){           
+           if(this.isInside(event, building.cell)){
+                tooltip.selection = building;
+                return;
+           }
+        }
+        tooltip.selection = null;
+    }
 }
 let map = new Map();
-map.addItemOnGround({ i: 0, j: 5 }, items.water);
-map.addItemOnGround({ i: 0, j: 5 }, items.apple);
-map.addItemOnGround({ i: 0, j: 5 }, items.sand);
-map.addItemOnGround({ i: 0, j: 5 }, items.flask);
-map.addItemOnGround({ i: 0, j: 5 }, items.ink);
-map.addItemOnGround({ i: 0, j: 5 }, items.ironOre);
-map.addItemOnGround({ i: 0, j: 5 }, items.coton);
-map.addItemOnGround({ i: 0, j: 5 }, items.spool);
-map.addItemOnGround({ i: 0, j: 5 }, items.blueSpool);
-map.addItemOnGround({ i: 0, j: 5 }, items.cloth);
+//map.addItemOnGround({ i: 0, j: 5 }, items.water);
 
+class Tooltip {
+    constructor() {
+        this.selection = null;
+        this.x = CanvasWidth - 250;
+        this.y = CanvasHeight - 150;
+        this.width = 250;
+        this.height = 150;
+    }
+    paint() {
+        if (!this.selection) {
+            return;
+        }
+        ctx.beginPath();
+        ctx.lineWidth = "1";
+        ctx.fillStyle = "#303030";
+        ctx.rect(this.x, this.y, this.width, this.height);
+        ctx.fill();
+        this.selection.paintTooltip(this);
+    }
+}
+const tooltip = new Tooltip();
 
 let selectedBot = bots[0];
 function runCode(applyAll) {
@@ -808,7 +875,7 @@ function runCode(applyAll) {
     }
 }
 tick();
-function onmousedown(event) {
+function onmousedown(event) {    
     for (let bot of bots) {
         if (bot.isInside(event)) {
             if (selectedBot != bot) {
@@ -820,13 +887,15 @@ function onmousedown(event) {
             }
         }
     }
-    if (headquarters.isInside(event)) {
+    if (map.isInside(event, headquarters.cell)) {
         if (selectedBot != headquarters) {
             selectedBot.code = document.getElementById('code').value;
             selectedBot = headquarters;
+            //tooltip.selection = headquarters;
             document.getElementById('code').value = selectedBot.code;
             document.getElementById('applyOnlyTo').innerText = `For Headquarters, aka new bots`;
             return;
         }
     }
+    map.click(event);
 }
