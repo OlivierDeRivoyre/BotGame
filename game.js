@@ -693,6 +693,37 @@ class Headquarters {
             ctx.stroke();
         }
     }
+    paintTooltip(tooltip) {
+        let cursorY = tooltip.y + 22;
+        let cursorX = tooltip.x + 8;
+
+        ctx.fillStyle = "green";
+        ctx.font = "bold 18px Verdana";
+        ctx.fillText(this.name, cursorX, cursorY);
+        cursorY += 18;
+
+        ctx.fillStyle = "white";
+        ctx.font = "12px Verdana";
+        const moveTxt = `Level ${this.mission.id} ${this.mission.progressPercent }% - moveTo(${this.cell.i}, ${this.cell.i}); drop();`;
+        ctx.fillText(moveTxt, cursorX, cursorY);
+        cursorY += 16;
+        
+        ctx.fillStyle = "white";
+        ctx.font = "12px Verdana";
+        const craftTxt = `Objective:`;
+        ctx.fillText(craftTxt, cursorX, cursorY);
+        cursorY += 16;
+                
+        for(let i = 0; i < this.mission.progress.length; i++){     
+            const p = this.mission.progress[i];     
+            p.item.paintForTooltip(cursorX, cursorY, 1);        
+            ctx.fillStyle = "white";
+            ctx.font = "12px Verdana";
+            const pTxt = `${p.count} / ${p.max}`;
+            ctx.fillText(pTxt, cursorX + 36, cursorY + 20);
+            cursorY += 32;
+        }
+    }
     update() {
         let item;
         while ((item = map.takeItem(this.cell)) != null) {
@@ -891,7 +922,7 @@ function onmousedown(event) {
         if (selectedBot != headquarters) {
             selectedBot.code = document.getElementById('code').value;
             selectedBot = headquarters;
-            //tooltip.selection = headquarters;
+            tooltip.selection = headquarters;
             document.getElementById('code').value = selectedBot.code;
             document.getElementById('applyOnlyTo').innerText = `For Headquarters, aka new bots`;
             return;
