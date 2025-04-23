@@ -42,12 +42,12 @@ class Sprite {
             this.tWidth, this.tHeight
         )
     }
-    paintScale(x, y, width, heigth) {
+    paintScale(x, y, width, height) {
         ctx.drawImage(this.tile,
             this.tx, this.ty,
             this.tWidth, this.tHeight,
             x, y,
-            width, heigth
+            width, height
         )
     }
 }
@@ -82,12 +82,12 @@ const waterTiles = new PipoGoundTiles(5, "water");
 
 const tickDuration = 1000.0 / 30;
 function tick() {
-    for(let bot of bots){
+    for (let bot of bots) {
         bot.update();
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     map.paint();
-    for(let bot of bots){
+    for (let bot of bots) {
         bot.paint();
     }
     setTimeout(tick, tickDuration);
@@ -105,7 +105,7 @@ class Bot {
         this.bag = [];
         this.bagSize = 2;
         this.code = null;
-        this.sprite = healerSprite;       
+        this.sprite = healerSprite;
     }
     update() {
         if (this.currentAction != null) {
@@ -149,7 +149,7 @@ class Bot {
         ctx.fillStyle = "#eee";
         ctx.fillText(this.name, this.x + 8, this.y + this.sprite.tHeight - 8);
     }
-    setCode(code) {        
+    setCode(code) {
         const self = this;
         this.code = code;
         function initInterpreter(interpreter, globalObject) {
@@ -184,7 +184,7 @@ class Bot {
                 }));
             interpreter.setProperty(globalObject, 'setName', interpreter.createNativeFunction(
                 function setName(name) {
-                    if(name){
+                    if (name) {
                         self.name = name;
                     }
                 }));
@@ -270,7 +270,7 @@ class Bot {
         this.currentAction = new WaitAnim(0.1);
         headquarters.update();
     }
-    isInside(event) {        
+    isInside(event) {
         return event.offsetX >= this.x && event.offsetX < this.x + this.sprite.tWidth
             && event.offsetY >= this.y && event.offsetY < this.y + this.sprite.tHeight
     }
@@ -505,35 +505,35 @@ class Mission {
         this.id = id;
         this.ingredients = ingredients;
         this.onSuccessFunc = onSuccessFunc;
-        this.progress = ingredients.map(function(ing) {
-            return  {item: ing.item, count: 0, max: ing.count };
+        this.progress = ingredients.map(function (ing) {
+            return { item: ing.item, count: 0, max: ing.count };
         });
         this.progressPercent = 0;
     }
     addProgress(item) {
 
         const p = this.progress.find(pr => pr.item.name == item.name);
-        if(!p || p.count >= p.max){
+        if (!p || p.count >= p.max) {
             return;
         }
         p.count++;
         this.refreshProgress();
     }
-    refreshProgress(){
+    refreshProgress() {
         let finished = true;
         let items = 0;
         let total = 0;
-        for(let p of this.progress){
-            if(p.count < p.max){
+        for (let p of this.progress) {
+            if (p.count < p.max) {
                 finished = false;
             }
             items += p.count;
             total += p.max;
         }
         this.progressPercent = items * 100 / total;
-        if(finished){
+        if (finished) {
             this.progressPercent = 0;
-            for(let p of this.progress){
+            for (let p of this.progress) {
                 p.count = 0;
             }
             this.onSuccessFunc();
@@ -546,12 +546,13 @@ class Headquarters {
         this.cell = { i: 7, j: 4 }
         this.sprite = getPipoTile(1, 10);
         this.mission = new Mission(1, [{ item: items.apple, count: 2 }], () => this.missionEnded());
+        this.code = "";
     }
     paint() {
         const topX = Map.BorderX + this.cell.i * 48;
         const topY = Map.BorderY + this.cell.j * 48;
         this.sprite.paintNoScale(topX, topY);
-        if(this.mission.progressPercent != 0){
+        if (this.mission.progressPercent != 0) {
             const left = topX;
             const top = topY + 48;
             ctx.beginPath();
@@ -574,15 +575,27 @@ class Headquarters {
         }
     }
     missionEnded() {
-        const x = headquarters.cell.i * 48 + 48;
-        const y = headquarters.cell.j * 48 + 16;
-        bots.push(new Bot(bots.length + 1, 
-            x + Math.floor(Math.random() * 48),
-            y + Math.floor(Math.random() * 48)));        
+        this.addNewBot();
         this.mission = new Mission(
-            this.mission.id + 1, 
-            [{ item: items.apple, count: 3 * this.mission.id * this.mission.id }], 
+            this.mission.id + 1,
+            [{ item: items.apple, count: 3 * this.mission.id * this.mission.id }],
             () => this.missionEnded());
+    }
+    addNewBot() {
+        const coord = map.getCoord(this.cell);
+        const bot = new Bot(bots.length + 1,
+            coord.x + Math.floor(Math.random() * 48),
+            coord.y + Math.floor(Math.random() * 48));
+        bot.setCode(this.code);
+        bots.push(bot);
+    }
+    isInside(event) {
+        const coord = map.getCoord(this.cell);
+        return event.offsetX >= coord.x && event.offsetX < coord.x + coord.width
+            && event.offsetY >= coord.y && event.offsetY < coord.y + coord.height
+    }
+    setCode(code) {
+        this.code = code;
     }
 }
 const headquarters = new Headquarters();
@@ -619,6 +632,11 @@ class Map {
             tile.paint();
         }
         headquarters.paint();
+    }
+    getCoord(cell) {
+        const x = Map.BorderX + cell.i * 48;
+        const y = Map.BorderY + cell.j * 48;
+        return { x, y, width: 48, height: 48 };
     }
     getItemStackAt(cell) {
         for (let itemStack of this.itemStacks) {
@@ -694,23 +712,35 @@ map.addItemOnGround({ i: 2, j: 0 }, items.water);
 let selectedBot = bots[0];
 function runCode(applyAll) {
     const code = document.getElementById('code').value;
-    if(applyAll){
-        for(let bot of bots){
+    if (applyAll) {
+        for (let bot of bots) {
             bot.setCode(code);
         }
-    } else{
+        headquarters.setCode(code);
+    } else {
         selectedBot.setCode(code);
     }
 }
 tick();
-function onmousedown(event){
-    for(let bot of bots){
+function onmousedown(event) {
+    for (let bot of bots) {
         if (bot.isInside(event)) {
-            if(selectedBot != bot){
+            if (selectedBot != bot) {
                 selectedBot.code = document.getElementById('code').value;
                 selectedBot = bot;
-                document.getElementById('code').value = bot.code;            
+                document.getElementById('code').value = bot.code;
+                document.getElementById('applyOnlyTo').innerText = `Only on ${bot.id} - ${bot.name}`;
+                return;
             }
+        }
+    }
+    if (headquarters.isInside(event)) {
+        if (selectedBot != headquarters) {
+            selectedBot.code = document.getElementById('code').value;
+            selectedBot = headquarters;
+            document.getElementById('code').value = selectedBot.code;
+            document.getElementById('applyOnlyTo').innerText = `For Headquarters, aka new bots`;
+            return;
         }
     }
 }

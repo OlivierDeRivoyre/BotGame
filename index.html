@@ -30,7 +30,8 @@ while(true){
             </textarea>
             <br>
             <button onclick="runCode(document.getElementById('applyAll').checked)" id="runButton">Run</button>
-            <input type="checkbox" id="applyAll" />Apply all
+            <input type="radio" name="applyTo" id="applyAll" />Apply all
+            <input type="radio" name="applyTo" checked="checked" /><label  id="applyOnlyTo" >Only on bot 1</label>
             <!--<button onclick="stepButton()" id="stepButton" disabled="disabled">Step</button>
     <button onclick="clear()">Clear</button>-->
         </div>
@@ -44,7 +45,7 @@ switch(getId()){
   case 3: newName = "Carl"; break
 }
 setName(newName);
-moveTo(getId() % 16, 6 + Math.floor(getId() / 16));
+moveTo((getId() - 1) % 16, 8);
 say("Hello, I'm " + getName());
 while(true){ 
     moveTo("well");
