@@ -57,7 +57,7 @@ class Sprite {
         )
     }
 }
-const healerSprite = new Sprite(dungeonTileSet, 256, 340, 32, 48);
+
 
 class PipoGoundTiles {
     constructor(index, name) {
@@ -100,6 +100,17 @@ function tick() {
     setTimeout(tick, tickDuration);
 }
 
+function getDungeonTileSetSprite(i, j) {
+    const x = 256 + i * 64;
+    const y = j * 64;
+    const topMargin = 16;
+    return new Sprite(dungeonTileSet, x, y + topMargin, 32, 64 - topMargin);
+}
+
+//const healerSprite = new Sprite(dungeonTileSet, 256, 340, 32, 48);
+//const healerSprite = getDungeonTileSetSprite(0, 0);
+const botSprites = [...Array(20).keys()].map(i => getDungeonTileSetSprite(Math.floor(i / 10), i % 10));
+
 class Bot {
     constructor(id, x, y) {
         this.id = id;
@@ -112,7 +123,7 @@ class Bot {
         this.bag = [];
         this.bagSize = 2;
         this.code = null;
-        this.sprite = healerSprite;
+        this.sprite = botSprites[this.id % botSprites.length];
     }
     update() {
         if (this.currentAction != null) {
@@ -704,7 +715,7 @@ class Headquarters {
 
         ctx.fillStyle = "white";
         ctx.font = "12px Verdana";
-        const moveTxt = `Level ${this.mission.id} ${this.mission.progressPercent}% - moveTo(${this.cell.i}, ${this.cell.i}); drop();`;
+        const moveTxt = `Level ${this.mission.id} ${Math.floor(this.mission.progressPercent)}% - moveTo(${this.cell.i}, ${this.cell.i}); drop();`;
         ctx.fillText(moveTxt, cursorX, cursorY);
         cursorY += 16;
 
@@ -739,11 +750,10 @@ class Headquarters {
     }
     createMissionIngredients(lvl) {
         const appleRequired = 2 * lvl * lvl;
-        const clothLevel = lvl - 3;
+        const clothLevel = lvl - 4;
         if (clothLevel <= 0) {
             return [{ item: items.apple, count: appleRequired }];
         }
-
         let clothRequired = clothLevel * clothLevel;
         return [
             { item: items.apple, count: appleRequired },
@@ -831,7 +841,8 @@ class Map {
     }
     removeItems(cell, item, count) {
         let itemStack = this.getItemStackAt(cell);
-        if(itemStack == null){
+        if (itemStack == null) {
+            console.error(`itemStack shouln't be null. item:${item.name}, cell: (${cell.i}, ${cell.j})`)
             return;
         }
         itemStack.removeItems(item, count);
@@ -937,7 +948,7 @@ function onmousedown(event) {
         tooltip.selection = headquarters;
         if (selectedBot != headquarters) {
             selectedBot.code = document.getElementById('code').value;
-            selectedBot = headquarters;            
+            selectedBot = headquarters;
             document.getElementById('code').value = selectedBot.code;
             document.getElementById('applyOnlyTo').innerText = `For Headquarters, aka new bots`;
             return;
