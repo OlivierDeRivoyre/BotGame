@@ -48,15 +48,18 @@ setName(newName);
 moveTo((getId() - 1) % 16, 8);
 say("Hello, I'm " + getName());
 wait(getId());
-while(true){ 
+function bringAppleTo(to){
     moveTo("well");
     craft();
     take();
     moveTo("tree");
     craft();
     take();
-    moveTo("Headquarters");
+    moveTo(to);
     drop();
+}
+while(true){ 
+    bringAppleTo("Headquarters")
 }
         </pre></code>
         </div>

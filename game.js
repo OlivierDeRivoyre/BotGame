@@ -24,6 +24,10 @@ function getShikashiTile(i, j) {
 function getPipoTile(i, j) {
     return new Sprite(pipoBuildingTileSet, i * 48, j * 48);
 }
+function isInsideCoord(event, coord) {
+    return event.offsetX >= coord.x && event.offsetX < coord.x + coord.width
+        && event.offsetY >= coord.y && event.offsetY < coord.y + coord.height;
+}
 class Sprite {
     constructor(tile, tx, ty, tWidth, tHeight) {
         this.tile = tile;
@@ -181,6 +185,21 @@ class Bot {
         const moveTxt = `id: ${this.id}`;
         ctx.fillText(moveTxt, cursorX, cursorY);
         cursorY += 18;
+
+        ctx.fillStyle = "white";
+        ctx.font = "12px Verdana";        
+        ctx.fillText(`Bag size: 2`, cursorX, cursorY);
+        cursorY += 18;
+
+        ctx.fillStyle = "white";
+        ctx.font = "12px Verdana";        
+        ctx.fillText(`Crafting speed: 0 / 10 (Not impl)`, cursorX, cursorY);
+        cursorY += 18;
+
+        ctx.fillStyle = "white";
+        ctx.font = "12px Verdana";        
+        ctx.fillText(`Walking speed: 0 / 10 (Not impl)`, cursorX, cursorY);
+        cursorY += 18;              
     }
     setCode(code) {
         const self = this;
@@ -836,8 +855,7 @@ class Map {
     }
     isInside(event, cell) {
         const coord = this.getCoord(cell);
-        return event.offsetX >= coord.x && event.offsetX < coord.x + coord.width
-            && event.offsetY >= coord.y && event.offsetY < coord.y + coord.height
+        return isInsideCoord(event, coord);
     }
     getItemStackAt(cell) {
         for (let itemStack of this.itemStacks) {
@@ -910,25 +928,84 @@ class Map {
     click(event) {
         for (let building of this.buildingTiles) {
             if (this.isInside(event, building.cell)) {
-                tooltip.selection = building;
+                tooltip.setSelection(building);
                 return;
             }
         }
-        tooltip.selection = null;
+        tooltip.setSelection(null);
     }
 }
 let map = new Map();
 //map.addItemOnGround({ i: 0, j: 5 }, items.water);
+class MultiSelection {
+    constructor(botAndHeadquarters) {
+        this.buttons = [];
+        let x = CanvasWidth;
+        const y = CanvasHeight - 40
+        for (let entity of botAndHeadquarters) {
+            x -= 42;
+            const button = { entity, x, y, sprite: entity.sprite, width: 40, height: 38 };
+            this.buttons.push(button);
+            this.selectedButton = button;
+        }
+        this.coord = { x: x - 4, y, width: CanvasWidth - x, height: 38 };
+    }
+    paint() {
+        ctx.beginPath();
+        ctx.lineWidth = "1";
+        ctx.fillStyle = "#3338";
+        ctx.rect(this.coord.x, this.coord.y, this.coord.width, this.coord.height);
+        ctx.fill();
+        for (let button of this.buttons) {
+            button.sprite.paint32(button.x, button.y);
+        }
+    }
+    click(event) {
+        if (!isInsideCoord(event, this.coord)) {
+            return false;
+        }
+        for (let button of this.buttons) {
+            if (isInsideCoord(event, button)) {
+                tooltip.setMultiSelection([button.entity]);
+                return true;
+            }
+        }
+        return true;
+    }
+}
 
 class Tooltip {
     constructor() {
         this.selection = null;
+        this.multiSelection = null;
         this.x = CanvasWidth - 250;
         this.y = CanvasHeight - 150;
         this.width = 250;
         this.height = 150;
     }
+    setSelection(selection) {
+        this.selection = selection;
+        this.multiSelection = null;        
+    }
+    setMultiSelection(botAndHeadquarters) {
+        if (botAndHeadquarters.length == 0) {
+            this.selection = null;
+            this.multiSelection = null;
+        } else if (botAndHeadquarters.length == 1) {
+            this.selection = botAndHeadquarters[0];
+            setSelectedBot(this.selection);
+            this.multiSelection = null;
+        } else {
+            this.selection = null;
+            this.multiSelection = new MultiSelection(botAndHeadquarters);
+            setSelectedBot(botAndHeadquarters[0]);
+        }
+    }
     paint() {
+        if (this.multiSelection) {
+            this.multiSelection.paint();
+            return;
+        }
         if (!this.selection) {
             return;
         }
@@ -938,6 +1015,12 @@ class Tooltip {
         ctx.rect(this.x, this.y, this.width, this.height);
         ctx.fill();
         this.selection.paintTooltip(this);
+    }
+    click(event) {
+        if (this.multiSelection) {
+            return this.multiSelection.click(event);
+        }
+        return false;
     }
 }
 const tooltip = new Tooltip();
@@ -955,28 +1038,33 @@ function runCode(applyAll) {
     }
 }
 tick();
-function onmousedown(event) {
-    for (let bot of bots) {
-        if (bot.isInside(event)) {
-            tooltip.selection = bot;
-            if (selectedBot != bot) {
-                selectedBot.code = document.getElementById('code').value;
-                selectedBot = bot;
-                document.getElementById('code').value = bot.code;
-                document.getElementById('applyOnlyTo').innerText = `Only on ${bot.id} - ${bot.name}`;
-            }
-            return;
+function setSelectedBot(botOrHeadquarters) {
+    if (selectedBot != botOrHeadquarters) {
+        selectedBot.code = document.getElementById('code').value;
+        selectedBot = botOrHeadquarters;
+        document.getElementById('code').value = botOrHeadquarters.code;
+        let applyLabel = `Only on ${botOrHeadquarters.id} - ${botOrHeadquarters.name}`;
+        if (botOrHeadquarters === headquarters) {
+            applyLabel = `For Headquarters, aka new bots`;
         }
+        document.getElementById('applyOnlyTo').innerText = applyLabel;
     }
-    if (map.isInside(event, headquarters.cell)) {
-        tooltip.selection = headquarters;
-        if (selectedBot != headquarters) {
-            selectedBot.code = document.getElementById('code').value;
-            selectedBot = headquarters;
-            document.getElementById('code').value = selectedBot.code;
-            document.getElementById('applyOnlyTo').innerText = `For Headquarters, aka new bots`;
-        }
+}
+function onmousedown(event) {
+    if (tooltip.click(event)) {
         return;
     }
-    map.click(event);
+    const botAndHeadquarters = [];
+    if (map.isInside(event, headquarters.cell)) {
+        botAndHeadquarters.push(headquarters);
+    }
+    for (let bot of bots) {
+        if (bot.isInside(event)) {
+            botAndHeadquarters.push(bot);
+        }
+    }
+    tooltip.setMultiSelection(botAndHeadquarters);
+    if (botAndHeadquarters.length == 0) {
+        map.click(event);
+    }
 }
