@@ -4,7 +4,7 @@ const CanvasHeight = 450;
 const canvas = document.getElementById("myCanvas");
 canvas.onmousedown = onmousedown;
 const ctx = canvas.getContext("2d");
-
+console.clear();
 function square(x) {
     return x * x;
 }
@@ -638,43 +638,46 @@ class TileFactory {
     }
 }
 class Mission {
-    constructor(id, ingredients, onSuccessFunc) {
-        this.id = id;
-        this.ingredients = ingredients;
+    constructor(item, onSuccessFunc) {
+        this.item = item;
         this.onSuccessFunc = onSuccessFunc;
-        this.progress = ingredients.map(function (ing) {
-            return { item: ing.item, count: 0, max: ing.count };
-        });
+        this.lvl = 1;
+        this.count = 0;
         this.progressPercent = 0;
+        this.max = this.getNewMax();
     }
     addProgress(item) {
-
-        const p = this.progress.find(pr => pr.item.name == item.name);
-        if (!p || p.count >= p.max) {
+        if (this.item.name != item.name) {
             return;
         }
-        p.count++;
+        this.count++;
         this.refreshProgress();
     }
     refreshProgress() {
-        let finished = true;
-        let items = 0;
-        let total = 0;
-        for (let p of this.progress) {
-            if (p.count < p.max) {
-                finished = false;
-            }
-            items += p.count;
-            total += p.max;
+        if (this.count < this.max) {
+            this.progressPercent = Math.floor(this.count * 100 / this.max);
         }
-        this.progressPercent = items * 100 / total;
-        if (finished) {
+        else {
+            this.lvl++;
             this.progressPercent = 0;
-            for (let p of this.progress) {
-                p.count = 0;
-            }
+            this.count = 0;
+            this.max = this.getNewMax();
             this.onSuccessFunc();
         }
+    }
+    getSlowCurve(lvl){
+        const range = [1, 2, 3, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 80, 100];
+        let i = lvl - 1;        
+        if(i < range.length){
+            return range[i];
+        }
+        return 100 + 25 * (1 + i - range.length);
+    }
+    getNewMax() {
+        if (this.item.name == items.apple.name) {
+            return 2 * this.lvl * this.lvl;
+        }
+        return this.getSlowCurve(this.lvl);       
     }
 }
 class Headquarters {
@@ -682,22 +685,26 @@ class Headquarters {
         this.name = "Headquarters";
         this.cell = { i: 7, j: 4 }
         this.sprite = getPipoTile(1, 10);
-        this.mission = new Mission(1, [{ item: items.apple, count: 2 }], () => this.missionEnded());
+        this.missions = [
+            new Mission(items.apple, () => this.missionEnded()),
+            new Mission(items.cloth, () => this.missionEnded()),
+        ];
         this.code = "";
     }
     paint() {
         const topX = Map.BorderX + this.cell.i * 48;
         const topY = Map.BorderY + this.cell.j * 48;
         this.sprite.paintNoScale(topX, topY);
-        if (this.mission.progressPercent != 0) {
+        if (this.missions.find(m => m.progressPercent != 0)) {
             const left = topX;
             const top = topY + 48;
-            ctx.beginPath();
-            ctx.lineWidth = "1";
-            ctx.fillStyle = "cyan";
-            ctx.rect(left, top, 48 * this.mission.progressPercent / 100, 6);
-            ctx.fill();
-
+            for(let i = 0; i< this.missions.length; i++){
+                ctx.beginPath();
+                ctx.lineWidth = "1";
+                ctx.fillStyle = "cyan";
+                ctx.rect(left, top + i * 3, 48 * this.missions[i].progressPercent / 100, 3);
+                ctx.fill();
+            }
             ctx.beginPath();
             ctx.lineWidth = "1";
             ctx.strokeStyle = "green";
@@ -716,49 +723,50 @@ class Headquarters {
 
         ctx.fillStyle = "white";
         ctx.font = "12px Verdana";
-        const moveTxt = `Level ${this.mission.id} ${Math.floor(this.mission.progressPercent)}% - moveTo(${this.cell.i}, ${this.cell.i}); drop();`;
+        const moveTxt = `moveTo(${this.cell.i}, ${this.cell.i}); drop();`;
         ctx.fillText(moveTxt, cursorX, cursorY);
-        cursorY += 16;
+        cursorY += 24;
 
-        ctx.fillStyle = "white";
+        ctx.fillStyle = "yellow";
         ctx.font = "12px Verdana";
         const craftTxt = `Objective:`;
         ctx.fillText(craftTxt, cursorX, cursorY);
-        cursorY += 16;
+        cursorY += 12;
 
-        for (let i = 0; i < this.mission.progress.length; i++) {
-            const p = this.mission.progress[i];
-            p.item.paintForTooltip(cursorX, cursorY, 1);
+        let x = cursorX;
+        for (let i = 0; i < this.missions.length; i++) {            
+            const mission = this.missions[i];
+            if(i != 0){
+                ctx.fillStyle = "white";
+                ctx.font = "12px Verdana";
+                ctx.fillText("or", x, cursorY + 20);
+                x += 36;
+            }
+            mission.item.paintForTooltip(x, cursorY, 1);
             ctx.fillStyle = "white";
             ctx.font = "12px Verdana";
-            const pTxt = `${p.count} / ${p.max}`;
-            ctx.fillText(pTxt, cursorX + 36, cursorY + 20);
-            cursorY += 32;
+            const lvlLabel = `lvl ${mission.lvl}   ${Math.floor(mission.progressPercent)}%`;        
+            ctx.fillText(lvlLabel, x, cursorY + 50);
+    
+            x += 36;
+            ctx.fillStyle = "white";
+            ctx.font = "12px Verdana";
+            const pTxt = `${mission.count} / ${mission.max}`;
+            ctx.fillText(pTxt, x, cursorY + 20);
+            x += 60;            
         }
+
     }
     update() {
         let item;
         while ((item = map.takeItem(this.cell)) != null) {
-            this.mission.addProgress(item);
+            for(let m of this.missions){
+                m.addProgress(item);
+            }
         }
     }
     missionEnded() {
         this.addNewBot();
-        this.mission = new Mission(
-            this.mission.id + 1,
-            this.createMissionIngredients(this.mission.id + 1),
-            () => this.missionEnded());
-    }
-    createMissionIngredients(lvl) {
-        const appleRequired = 2 * lvl * lvl;
-        const clothLevel = lvl - 4;
-        if (clothLevel <= 0) {
-            return [{ item: items.apple, count: appleRequired }];
-        }
-        let clothRequired = clothLevel * clothLevel;
-        return [
-            { item: items.apple, count: appleRequired },
-            { item: items.cloth, count: clothRequired }];
     }
     addNewBot() {
         const coord = map.getCoord(this.cell);
@@ -951,9 +959,9 @@ function onmousedown(event) {
             selectedBot.code = document.getElementById('code').value;
             selectedBot = headquarters;
             document.getElementById('code').value = selectedBot.code;
-            document.getElementById('applyOnlyTo').innerText = `For Headquarters, aka new bots`;
-            return;
+            document.getElementById('applyOnlyTo').innerText = `For Headquarters, aka new bots`;          
         }
+        return;
     }
     map.click(event);
 }
