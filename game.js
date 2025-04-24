@@ -124,7 +124,6 @@ class Bot {
         this.bagSize = 2;
         this.code = null;
         this.sprite = botSprites[this.id % botSprites.length];
-
     }
     update() {
         if (this.currentAction != null) {
@@ -165,8 +164,23 @@ class Bot {
             this.bag[i].paintSmallWithCount(this.x + 16 * i, this.y + 20, 1);
         }
         ctx.font = "10px Georgia";
-        ctx.fillStyle = "#eee";
+        ctx.fillStyle = (this === selectedBot) ? "#efe" : "#eee";
         ctx.fillText(this.name, this.x + 8, this.y + this.sprite.tHeight - 8);
+    }
+    paintTooltip(tooltip) {
+        let cursorY = tooltip.y + 22;
+        let cursorX = tooltip.x + 8;
+
+        ctx.fillStyle = "green";
+        ctx.font = "bold 18px Verdana";
+        ctx.fillText(this.name, cursorX, cursorY);
+        cursorY += 18;
+
+        ctx.fillStyle = "white";
+        ctx.font = "12px Verdana";
+        const moveTxt = `id: ${this.id}`;
+        ctx.fillText(moveTxt, cursorX, cursorY);
+        cursorY += 18;
     }
     setCode(code) {
         const self = this;
@@ -511,7 +525,8 @@ class BuildingTile {
         this.recipe = recipe;
     }
     paint() {
-        this.sprite.paintNoScale(Map.BorderX + this.cell.i * 48, Map.BorderY + this.cell.j * 48);
+        const coord = map.getCoord(this.cell);
+        this.sprite.paintNoScale(coord.x, coord.y);
     }
     paintTooltip(tooltip) {
         let cursorY = tooltip.y + 22;
@@ -524,7 +539,7 @@ class BuildingTile {
 
         ctx.fillStyle = "white";
         ctx.font = "12px Verdana";
-        const moveTxt = `moveTo(${this.cell.i}, ${this.cell.i})`;
+        const moveTxt = `moveTo(${this.cell.i}, ${this.cell.j})`;
         ctx.fillText(moveTxt, cursorX, cursorY);
         cursorY += 16;
 
@@ -665,10 +680,10 @@ class Mission {
             this.onSuccessFunc();
         }
     }
-    getSlowCurve(lvl){
+    getSlowCurve(lvl) {
         const range = [1, 2, 3, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 80, 100];
-        let i = lvl - 1;        
-        if(i < range.length){
+        let i = lvl - 1;
+        if (i < range.length) {
             return range[i];
         }
         return 100 + 25 * (1 + i - range.length);
@@ -677,7 +692,7 @@ class Mission {
         if (this.item.name == items.apple.name) {
             return 2 * this.lvl * this.lvl;
         }
-        return this.getSlowCurve(this.lvl);       
+        return this.getSlowCurve(this.lvl);
     }
 }
 class Headquarters {
@@ -698,7 +713,7 @@ class Headquarters {
         if (this.missions.find(m => m.progressPercent != 0)) {
             const left = topX;
             const top = topY + 48;
-            for(let i = 0; i< this.missions.length; i++){
+            for (let i = 0; i < this.missions.length; i++) {
                 ctx.beginPath();
                 ctx.lineWidth = "1";
                 ctx.fillStyle = "cyan";
@@ -723,7 +738,7 @@ class Headquarters {
 
         ctx.fillStyle = "white";
         ctx.font = "12px Verdana";
-        const moveTxt = `moveTo(${this.cell.i}, ${this.cell.i}); drop();`;
+        const moveTxt = `moveTo(${this.cell.i}, ${this.cell.j}); drop();`;
         ctx.fillText(moveTxt, cursorX, cursorY);
         cursorY += 24;
 
@@ -734,9 +749,9 @@ class Headquarters {
         cursorY += 12;
 
         let x = cursorX;
-        for (let i = 0; i < this.missions.length; i++) {            
+        for (let i = 0; i < this.missions.length; i++) {
             const mission = this.missions[i];
-            if(i != 0){
+            if (i != 0) {
                 ctx.fillStyle = "white";
                 ctx.font = "12px Verdana";
                 ctx.fillText("or", x, cursorY + 20);
@@ -745,22 +760,21 @@ class Headquarters {
             mission.item.paintForTooltip(x, cursorY, 1);
             ctx.fillStyle = "white";
             ctx.font = "12px Verdana";
-            const lvlLabel = `lvl ${mission.lvl}   ${Math.floor(mission.progressPercent)}%`;        
+            const lvlLabel = `lvl ${mission.lvl}   ${Math.floor(mission.progressPercent)}%`;
             ctx.fillText(lvlLabel, x, cursorY + 50);
-    
+
             x += 36;
             ctx.fillStyle = "white";
             ctx.font = "12px Verdana";
             const pTxt = `${mission.count} / ${mission.max}`;
             ctx.fillText(pTxt, x, cursorY + 20);
-            x += 60;            
+            x += 60;
         }
-
     }
     update() {
         let item;
         while ((item = map.takeItem(this.cell)) != null) {
-            for(let m of this.missions){
+            for (let m of this.missions) {
                 m.addProgress(item);
             }
         }
@@ -944,13 +958,14 @@ tick();
 function onmousedown(event) {
     for (let bot of bots) {
         if (bot.isInside(event)) {
+            tooltip.selection = bot;
             if (selectedBot != bot) {
                 selectedBot.code = document.getElementById('code').value;
                 selectedBot = bot;
                 document.getElementById('code').value = bot.code;
                 document.getElementById('applyOnlyTo').innerText = `Only on ${bot.id} - ${bot.name}`;
-                return;
             }
+            return;
         }
     }
     if (map.isInside(event, headquarters.cell)) {
@@ -959,7 +974,7 @@ function onmousedown(event) {
             selectedBot.code = document.getElementById('code').value;
             selectedBot = headquarters;
             document.getElementById('code').value = selectedBot.code;
-            document.getElementById('applyOnlyTo').innerText = `For Headquarters, aka new bots`;          
+            document.getElementById('applyOnlyTo').innerText = `For Headquarters, aka new bots`;
         }
         return;
     }
