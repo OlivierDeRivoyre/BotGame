@@ -117,13 +117,14 @@ class Bot {
         this.x = x;
         this.y = y;
         this.name = "Bot " + id;
-        this.currentAction = null;
+        this.currentAction = new WaitAnim(1.5);
         this.interpreter = null;
         this.cartoonBubble = null;
         this.bag = [];
         this.bagSize = 2;
         this.code = null;
         this.sprite = botSprites[this.id % botSprites.length];
+
     }
     update() {
         if (this.currentAction != null) {
@@ -297,7 +298,6 @@ class Bot {
             && event.offsetY >= this.y && event.offsetY < this.y + this.sprite.tHeight
     }
 }
-const bots = [new Bot(1, 300, 300)];
 
 class MoveToAnim {
     constructor(item, cell_i, cell_j) {
@@ -363,6 +363,7 @@ class CraftAnim {
         }
     }
 }
+const bots = [new Bot(1, 200, 200)];
 
 class Item {
     constructor(name, sprite) {
