@@ -939,9 +939,7 @@ class Map {
     }
 }
 let map = new Map();
-map.addItemOnGround({ i: 0, j: 3 }, items.water);
-map.addItemOnGround({ i: 0, j: 3 }, items.cloth);
-map.addItemOnGround({ i: 0, j: 3 }, items.apple);
+
 class MultiSelection {
     constructor(botAndHeadquarters) {
         this.buttons = [];
@@ -1084,6 +1082,9 @@ function restore(){
         return;
     }
     headquarters.code = code;
+    document.getElementById("applyAll").checked = true;
     tooltip.setMultiSelection([headquarters]);
 }
 restore();
+
+//map.addItemOnGround({ i: 0, j: 3 }, items.water);

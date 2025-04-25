@@ -16,7 +16,7 @@
     <br>
     <div style="display: flex;">
         <div style="flex-grow: 1;">
-            <textarea id="code" spellcheck="false" rows="12" cols="80">
+            <textarea id="code" spellcheck="false" rows="12" cols="80" style="margin-right:0.5em">
 while(true){
     moveTo("well");
     craft();
@@ -35,39 +35,16 @@ while(true){
             <!--<button onclick="stepButton()" id="stepButton" disabled="disabled">Step</button>
     <button onclick="clear()">Clear</button>-->
         </div>
-        <div>           
-Sample of code:
-            <code><pre>
-var newName = "Bot" + getId();
-switch(getId()){
-  case 1: newName = "Alan"; break
-  case 2: newName = "Bob"; break
-  case 3: newName = "Carl"; break
-}
-setName(newName);
-moveTo((getId() - 1) % 16, 8);
-say("Hello, I'm " + getName());
-wait(getId());
-function bringAppleTo(to){
-    moveTo("well");
-    craft();
-    take();
-    moveTo("tree");
-    craft();
-    take();
-    moveTo(to);
-    drop();
-}
-while(true){ 
-    bringAppleTo("Headquarters")
-}
-        </pre></code>
-        </div>
+        <div>
+            <select id="docCombo" onchange="showDoc(this.value)"></select>  
+            <div id="docContent"></div>
+        </div> 
     </div>
 </body>
 <script src="./libs/acorn.js"></script>
 <script src="./libs/interpreter.js"></script>
 <script src="game.js"></script>
+<script src="doc.js"></script>
 
 <!--
 Thanks to Shikashipx and 0x72 for theirs CCA/MIT work on the assets:
