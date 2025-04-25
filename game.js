@@ -1037,10 +1037,11 @@ function runCode(applyAll) {
         for (let bot of bots) {
             bot.setCode(code);
         }
-        headquarters.setCode(code);
+        headquarters.setCode(code);        
     } else {
         selectedBot.setCode(code);
     }
+    save();
 }
 tick();
 function setSelectedBot(botOrHeadquarters) {
@@ -1073,3 +1074,16 @@ function onmousedown(event) {
         map.click(event);
     }
 }
+
+function save(){
+    localStorage.setItem("headquartersCode", headquarters.code);
+}
+function restore(){
+    const code = localStorage.getItem("headquartersCode");
+    if(!code || !code.trim()){
+        return;
+    }
+    headquarters.code = code;
+    tooltip.setMultiSelection([headquarters]);
+}
+restore();
