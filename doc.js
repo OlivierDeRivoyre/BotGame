@@ -103,7 +103,7 @@ The top left cell is (0,0) while bottom right is (15,8).
 </p>
 `,
 `<code><pre>
-for(var x = 0; x < 15; x++){
+for(var x = 0; x < 16; x++){
   moveTo(x, 0);
   moveTo(x, 8);
 }
