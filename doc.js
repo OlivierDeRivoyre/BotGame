@@ -70,12 +70,17 @@ while(true){
 addPage('How to play', [
 `<p>
 You control the bot by giving him a Javascript program to execute. 
-The goal is to bring stuff in the headquarters in the center of the maps.
+The goal is to drop stuff in the Headquarters in the center of the map.
+</p>
+<p>
+Fulfill an objective give you a new bot. 
+You can set a program to the Headquarters, newly created bots will run it.
 </p>
 <p>
 In addition of the standard ES5 JavaScript functions, you have access to the bot function that give order to the bot. 
 For example <code>moveTo("well")</code>.
-</p>`
+</p>
+`
 ]);
 
 addPage('moveTo()', [
@@ -177,15 +182,18 @@ addPage('drop()', [
 `<p>
 Drop on the ground an item from the bag.
 By default, the bot drops the oldest item from its bag.
-<code>drop()<code> can take an argument to specify wich item drop.
+<code>drop()</code> can take an argument to specify wich item drop.
 </p>
 `,
 `<code><pre>
 moveTo("well");
-craft(); craft();
-take(); take();
+craft(); 
+take(); 
 moveTo("tree");
-drop(); drop("water");
+craft(); 
+take(); 
+moveTo("headquarters");
+drop(); 
 </pre></code>`,
 `<code><pre>
 drop();
@@ -202,28 +210,96 @@ drop("cloth");
 </pre></code>`
 ]);
 
-addPage('Credits', [
-`
-<p>
-Thanks to Shikashipx and 0x72 and Pipoya for theirs CCA/MIT work on the assets:
-</p>
-<p>
-<a href="https://0x72.itch.io/dungeontileset-ii">dungeontileset-ii</a><br/>
-<a href="https://shikashipx.itch.io/shikashis-fantasy-icons-pack">shikashis-fantasy-icons-pack</a><br/>
-<a href="https://pipoya.itch.io/pipoya-free-rpg-world-tileset-32x32-40x40-48x48">pipoya-free-rpg-world</a>
-</p>
-<p>
-Libs:
-</p>
-<p>
-<a href="https://github.com/NeilFraser/JS-Interpreter">JS-Interpreter</a>: A sandboxed JavaScript interpreter in JavaScript. Execute arbitrary ES5 JavaScript code.
-</p>
 
-<p>
-Code source and bugs report can found on:
+addPage('say()', [
+`<p>
+Have a text that appears on the top of the bot.
 </p>
-<p>
-<a href="https://github.com/OlivierDeRivoyre/HealGame">github</a>
-</p>
-`
+`,
+`<code><pre>
+say("Hello");
+say("My ID is " + getId());
+say("My name is " + getName());
+</pre></code>`
 ]);
+
+addPage('wait()', [
+`<p>
+Let the bot idle for the number of second given in argument.
+</p>
+`,
+`<code><pre>
+say("I'm going to do nothing for 5 seconds");
+wait(5);
+say("I'm done waiting");
+</pre></code>`
+]);
+
+addPage('getId()', [
+`<p>
+Each bot has an Id. The first one has id 1, the second has 2 as id, etc.
+</p>
+`,
+`<code><pre>
+var newName = "Bot" + getId();
+switch(getId()){
+  case 1: newName = "Alan"; break
+  case 2: newName = "Bob"; break
+  case 3: newName = "Carl"; break
+}
+setName(newName);
+</pre></code>`
+]);
+
+addPage('getName()/setName()', [
+`<p>
+Bot name can be changed.
+</p>
+`,
+`<code><pre>
+setName("AppleBot");
+say("I'm now " + getName());
+</pre></code>`
+]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+addPage('Credits', [
+    `
+    <p>
+    Thanks to Shikashipx and 0x72 and Pipoya for theirs CCA/MIT work on the assets:
+    </p>
+    <p>
+    <a href="https://0x72.itch.io/dungeontileset-ii">dungeontileset-ii</a><br/>
+    <a href="https://shikashipx.itch.io/shikashis-fantasy-icons-pack">shikashis-fantasy-icons-pack</a><br/>
+    <a href="https://pipoya.itch.io/pipoya-free-rpg-world-tileset-32x32-40x40-48x48">pipoya-free-rpg-world</a>
+    </p>
+    <p>
+    Libs:
+    </p>
+    <p>
+    <a href="https://github.com/NeilFraser/JS-Interpreter">JS-Interpreter</a>: A sandboxed JavaScript interpreter in JavaScript. Execute arbitrary ES5 JavaScript code.
+    </p>
+    
+    <p>
+    Code source and bugs report can found on:
+    </p>
+    <p>
+    <a href="https://github.com/OlivierDeRivoyre/HealGame">github</a>
+    </p>
+    `
+    ]);
+    

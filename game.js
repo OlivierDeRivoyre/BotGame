@@ -216,19 +216,19 @@ class Bot {
                 }));
             interpreter.setProperty(globalObject, 'wait', interpreter.createNativeFunction(
                 function wait(duration) {
-                    self.sayAndWait(`waiting ${duration} sec`, 'black', duration);
+                    self.sayAndWait(`waiting ${duration} sec`, 'black', duration || 0.01);
                 }));
             interpreter.setProperty(globalObject, 'craft', interpreter.createNativeFunction(
                 function craft() {
                     self.craft();
                 }));
             interpreter.setProperty(globalObject, 'take', interpreter.createNativeFunction(
-                function take() {
-                    self.take();
+                function take(itemName) {
+                    self.take(itemName);
                 }));
             interpreter.setProperty(globalObject, 'drop', interpreter.createNativeFunction(
-                function drop() {
-                    self.drop();
+                function drop(itemName) {
+                    self.drop(itemName);
                 }));
             interpreter.setProperty(globalObject, 'getId', interpreter.createNativeFunction(
                 function getId() {
@@ -303,10 +303,10 @@ class Bot {
         }
         return removed;
     }
-    take() {
-        const item = map.takeItem(this.getCell());
+    take(itemName) {
+        const item = map.takeItem(this.getCell(), itemName);
         if (item == null) {
-            this.sayAndWait("No item to take", "red", 5);
+            this.sayAndWait(`No item ${itemName} to take`, "red", 5);
             return;
         }
         this.bag.push(item);
@@ -316,13 +316,21 @@ class Bot {
         }
         this.currentAction = new WaitAnim(0.1);
     }
-    drop() {
+    drop(itemName) {
         if (this.bag.length == 0) {
             this.sayAndWait("No item in bag to drop", "red", 5);
             return;
         }
-        map.addItemOnGround(this.getCell(), this.bag[0]);
-        this.bag.splice(0, 1);
+        let index = 0;
+        if (itemName && itemName.toLowerCase) {
+            index = this.bag.findIndex(item => item.name.toLowerCase() == itemName.toLowerCase());
+            if (index === -1) {
+                this.sayAndWait(`No item ${itemName} in bag to drop`, "red", 5);
+                return;
+            }
+        }
+        map.addItemOnGround(this.getCell(), this.bag[index]);
+        this.bag.splice(index, 1);
         this.currentAction = new WaitAnim(0.1);
         headquarters.update();
     }
@@ -480,11 +488,17 @@ class ItemStackTile {
             }
         }
     }
-    takeItem() {
+    takeItem(itemName) {
         if (this.buckets.length == 0) {
             return null;
         }
-        const index = this.buckets.length - 1;
+        let index = this.buckets.length - 1;
+        if (itemName && itemName.toLowerCase) {
+            index = this.buckets.findIndex(b => b.item.name.toLowerCase() == itemName.toLowerCase());
+            if (index === -1) {
+                return null;
+            }
+        }
         const item = this.buckets[index].item;
         this.buckets[index].count--;
         if (this.buckets[index].count <= 0) {
@@ -891,12 +905,12 @@ class Map {
         }
         itemStack.removeItems(item, count);
     }
-    takeItem(cell) {
+    takeItem(cell, itemName) {
         let itemStack = this.getItemStackAt(cell);
         if (itemStack == null) {
             return null;
         }
-        return itemStack.takeItem();
+        return itemStack.takeItem(itemName);
     }
     getBuilding(cell) {
         for (let building of this.buildingTiles) {
@@ -1035,7 +1049,7 @@ function runCode(applyAll) {
         for (let bot of bots) {
             bot.setCode(code);
         }
-        headquarters.setCode(code);        
+        headquarters.setCode(code);
     } else {
         selectedBot.setCode(code);
     }
@@ -1073,12 +1087,12 @@ function onmousedown(event) {
     }
 }
 
-function save(){
+function save() {
     localStorage.setItem("headquartersCode", headquarters.code);
 }
-function restore(){
+function restore() {
     const code = localStorage.getItem("headquartersCode");
-    if(!code || !code.trim()){
+    if (!code || !code.trim()) {
         return;
     }
     headquarters.code = code;
@@ -1087,4 +1101,7 @@ function restore(){
 }
 restore();
 
-//map.addItemOnGround({ i: 0, j: 3 }, items.water);
+map.addItemOnGround({ i: 0, j: 3 }, items.cloth);
+map.addItemOnGround({ i: 0, j: 3 }, items.water);
+map.addItemOnGround({ i: 0, j: 3 }, items.apple);
+map.addItemOnGround({ i: 0, j: 3 }, items.ironOre);
