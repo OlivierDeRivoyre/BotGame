@@ -187,19 +187,19 @@ class Bot {
         cursorY += 18;
 
         ctx.fillStyle = "white";
-        ctx.font = "12px Verdana";        
+        ctx.font = "12px Verdana";
         ctx.fillText(`Bag size: 2`, cursorX, cursorY);
         cursorY += 18;
 
         ctx.fillStyle = "white";
-        ctx.font = "12px Verdana";        
+        ctx.font = "12px Verdana";
         ctx.fillText(`Crafting speed: 0 / 10 (Not impl)`, cursorX, cursorY);
         cursorY += 18;
 
         ctx.fillStyle = "white";
-        ctx.font = "12px Verdana";        
+        ctx.font = "12px Verdana";
         ctx.fillText(`Walking speed: 0 / 10 (Not impl)`, cursorX, cursorY);
-        cursorY += 18;              
+        cursorY += 18;
     }
     setCode(code) {
         const self = this;
@@ -399,7 +399,8 @@ class CraftAnim {
 const bots = [new Bot(1, 200, 200)];
 
 class Item {
-    constructor(name, sprite) {
+    constructor(rank, name, sprite) {
+        this.rank = rank;
         this.name = name;
         this.sprite = sprite;
     }
@@ -432,17 +433,17 @@ class Item {
 }
 class Items {
     constructor() {
-        this.water = new Item("Water", getShikashiTile(10, 0));
-        this.apple = new Item("Apple", getShikashiTile(0, 14));
-        this.sand = new Item("Sand", getShikashiTile(11, 20));
-        this.flask = new Item("Flask", getShikashiTile(3, 19));
-        this.ironOre = new Item("IronOre", getShikashiTile(2, 17));
-        this.powder = new Item("Powder", getShikashiTile(2, 20));
-        this.ink = new Item("Ink", getShikashiTile(5, 19));
-        this.coton = new Item("Coton", getShikashiTile(5, 17));
-        this.spool = new Item("Spool", getShikashiTile(1, 22));
-        this.blueSpool = new Item("BlueSpool", getShikashiTile(2, 22));
-        this.cloth = new Item("Cloth", getShikashiTile(8, 7));
+        this.water = new Item(10, "Water", getShikashiTile(10, 0));
+        this.apple = new Item(20, "Apple", getShikashiTile(0, 14));
+        this.sand = new Item(30, "Sand", getShikashiTile(11, 20));
+        this.flask = new Item(40, "Flask", getShikashiTile(3, 19));
+        this.ironOre = new Item(50, "IronOre", getShikashiTile(2, 17));
+        this.powder = new Item(60, "Powder", getShikashiTile(2, 20));
+        this.ink = new Item(70, "Ink", getShikashiTile(5, 19));
+        this.coton = new Item(80, "Coton", getShikashiTile(5, 17));
+        this.spool = new Item(90, "Spool", getShikashiTile(1, 22));
+        this.blueSpool = new Item(100, "BlueSpool", getShikashiTile(2, 22));
+        this.cloth = new Item(110, "Cloth", getShikashiTile(8, 7));
     }
 }
 const items = new Items();
@@ -459,6 +460,7 @@ class ItemStackTile {
             }
         }
         this.buckets.push({ item, count: 1 });
+        this.buckets.sort((a, b) => a.item.rank - b.item.rank);
     }
     countItems(item) {
         for (let b of this.buckets) {
@@ -482,10 +484,11 @@ class ItemStackTile {
         if (this.buckets.length == 0) {
             return null;
         }
-        const item = this.buckets[0].item;
-        this.buckets[0].count--;
-        if (this.buckets[0].count <= 0) {
-            this.buckets.splice(0, 1);
+        const index = this.buckets.length - 1;
+        const item = this.buckets[index].item;
+        this.buckets[index].count--;
+        if (this.buckets[index].count <= 0) {
+            this.buckets.splice(index, 1);
         }
         return item;
     }
@@ -843,8 +846,8 @@ class Map {
         for (let tile of this.buildingTiles) {
             tile.paint();
         }
-        for (let tile of this.itemStacks) {
-            tile.paint();
+        for (let s of this.itemStacks) {
+            s.paint();
         }
         headquarters.paint();
     }
@@ -936,7 +939,9 @@ class Map {
     }
 }
 let map = new Map();
-//map.addItemOnGround({ i: 0, j: 5 }, items.water);
+map.addItemOnGround({ i: 0, j: 3 }, items.water);
+map.addItemOnGround({ i: 0, j: 3 }, items.cloth);
+map.addItemOnGround({ i: 0, j: 3 }, items.apple);
 class MultiSelection {
     constructor(botAndHeadquarters) {
         this.buttons = [];
@@ -985,7 +990,7 @@ class Tooltip {
     }
     setSelection(selection) {
         this.selection = selection;
-        this.multiSelection = null;        
+        this.multiSelection = null;
     }
     setMultiSelection(botAndHeadquarters) {
         if (botAndHeadquarters.length == 0) {
