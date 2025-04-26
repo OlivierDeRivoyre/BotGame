@@ -104,16 +104,31 @@ function tick() {
     setTimeout(tick, tickDuration);
 }
 
-function getDungeonTileSetSprite(i, j) {
+function getDungeonTileSetHeroSprite(i, j) {
     const x = 256 + i * 64;
     const y = j * 64;
     const topMargin = 16;
     return new Sprite(dungeonTileSet, x, y + topMargin, 32, 64 - topMargin);
 }
+function getDungeonTileSetVilainSprite(i) {
+    const x = 736;
+    const y = 18 + i * 48;
+    return new Sprite(dungeonTileSet, x, y, 32, 48);
+}
+function getDungeonTileSetSprite(index) {
+    const i = index % (20 + 16)
+    if (i < 10) {
+        return getDungeonTileSetHeroSprite(0, i);
+    }
+    if (i < 20) {
+        return getDungeonTileSetHeroSprite(1, i - 10);
+    }
+    return getDungeonTileSetVilainSprite(i - 20);
+}
 
 //const healerSprite = new Sprite(dungeonTileSet, 256, 340, 32, 48);
 //const healerSprite = getDungeonTileSetSprite(0, 0);
-const botSprites = [...Array(20).keys()].map(i => getDungeonTileSetSprite(Math.floor(i / 10), i % 10));
+const botSprites = [...Array(36).keys()].map(i => getDungeonTileSetSprite(i));
 
 class Bot {
     constructor(id, x, y) {
@@ -265,8 +280,18 @@ class Bot {
             interpreter.setProperty(globalObject, 'setName', interpreter.createNativeFunction(
                 function setName(name) {
                     if (name) {
+                        this.currentAction = new WaitAnim(0.1);
                         self.name = name;
                     }
+                }));
+            interpreter.setProperty(globalObject, 'setSkin', interpreter.createNativeFunction(
+                function setSkin(skinIndex) {
+                    self.setSkin(skinIndex);
+                    this.currentAction = new WaitAnim(0.1);
+                }));
+            interpreter.setProperty(globalObject, 'getBotsCount', interpreter.createNativeFunction(
+                function getBotsCount() {
+                    return bots.length;
                 }));
             interpreter.setProperty(globalObject, 'getBagSize', interpreter.createNativeFunction(
                 function getBagSize() {
@@ -279,7 +304,7 @@ class Bot {
             interpreter.setProperty(globalObject, 'getWalkLevel', interpreter.createNativeFunction(
                 function getWalkLevel() {
                     return self.walkLevel;
-                }));                                
+                }));
             interpreter.setProperty(globalObject, 'bagHasSpace', interpreter.createNativeFunction(
                 function bagHasSpace() {
                     return self.bagSize - self.bag.length;
@@ -443,6 +468,9 @@ class Bot {
         }
         this.currentAction = new WaitAnim(0.1);
         return count;
+    }
+    setSkin(skinIndex) {
+        this.sprite = botSprites[skinIndex % botSprites.length];
     }
     onXpGained() {
         if (this.craftXp >= this.nextCraftLevelXp) {

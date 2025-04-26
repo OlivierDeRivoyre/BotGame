@@ -262,9 +262,15 @@ addPage('getId()', [
 `<p>
 Each bot has an Id. The first one has id 1, the second has 2 as id, etc.
 </p>
+<p>
+<code>getBotsCount()</code> give the total number of bots.
+</p>
 `,
 `<code><pre>
-var newName = "Bot" + getId();
+var botCount = getBotsCount();
+say("bots count:" + botCount);
+var id = getId();
+var newName = "Bot" + id;
 switch(getId()){
   case 1: newName = "Alan"; break
   case 2: newName = "Bob"; break
@@ -274,7 +280,7 @@ setName(newName);
 </pre></code>`
 ]);
 
-addPage('getName()/setName()', [
+addPage('Bot display', [
 `<p>
 Bot name can be changed.
 </p>
@@ -282,6 +288,16 @@ Bot name can be changed.
 `<code><pre>
 setName("AppleBot");
 say("I'm now " + getName());
+</pre></code>`,
+`<p>
+Bot skin can also be chosen.
+</p>
+`,
+`<code><pre>
+for(var i = 0; i < 36; i++){
+    setSkin(i);
+    say("skin " + i);
+}
 </pre></code>`
 ]);
 
@@ -301,7 +317,7 @@ waitForItem("apple");
 </pre></code>`
 ]);
 
-addPage('bag', [
+addPage('Bot bag', [
 `<p>
 Bot <code>take()</code> items into its bag.
 A bot can carry <code>getBagSize()</code> items in its bag. 
@@ -363,7 +379,7 @@ say("Walk speed bonus: x" + bonus.toFixed(2));
 </pre></code>`,
 ]);
 
-addPage("place's items", [
+addPage("Place's items", [
 `<p>
 <code>placeHasItem()</code> and <code>getPlaceItemsCount()</code> give information about items on the ground.
 </p>
