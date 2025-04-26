@@ -125,10 +125,17 @@ class Bot {
         this.interpreter = null;
         this.cartoonBubble = null;
         this.bag = [];
-        this.bagSize = 2;
         this.code = null;
         this.error = null;
         this.sprite = botSprites[this.id % botSprites.length];
+        this.bagSize = 2;
+        this.craftLevel = Math.floor(Math.random() * 3);
+        this.walkLevel = Math.floor(Math.random() * 3);
+        this.craftXp = 0;
+        this.walkXp = 0;
+        this.nextCraftLevelXp = 100;
+        this.nextWalkLevelXp = 100;
+        this.setNextLevelXp();
     }
     update() {
         if (this.currentAction != null) {
@@ -203,12 +210,14 @@ class Bot {
 
         ctx.fillStyle = "white";
         ctx.font = "12px Verdana";
-        ctx.fillText(`Crafting speed: 0 / 10 (Not impl)`, cursorX, cursorY);
+        const craftProgress = this.craftLevel >= 10 ? ' (max lvl)' : `, xp: ${this.craftXp} / ${this.nextCraftLevelXp}`
+        ctx.fillText(`Craft lvl: ${this.craftLevel} / 10${craftProgress}`, cursorX, cursorY);
         cursorY += 18;
 
         ctx.fillStyle = "white";
         ctx.font = "12px Verdana";
-        ctx.fillText(`Walking speed: 0 / 10 (Not impl)`, cursorX, cursorY);
+        const walkProgress = this.walkLevel >= 10 ? ' (max lvl)' : `, xp: ${this.walkXp} / ${this.nextWalkLevelXp}`
+        ctx.fillText(`Walk lvl: ${this.walkLevel} / 10${walkProgress}`, cursorX, cursorY);
         cursorY += 18;
     }
     setCode(code) {
@@ -259,24 +268,32 @@ class Bot {
                         self.name = name;
                     }
                 }));
-            interpreter.setProperty(globalObject, 'bagSize', interpreter.createNativeFunction(
-                function bagSize() {
+            interpreter.setProperty(globalObject, 'getBagSize', interpreter.createNativeFunction(
+                function getBagSize() {
                     return self.bagSize;
                 }));
+            interpreter.setProperty(globalObject, 'getCraftLevel', interpreter.createNativeFunction(
+                function getCraftLevel() {
+                    return self.craftLevel;
+                }));
+            interpreter.setProperty(globalObject, 'getWalkLevel', interpreter.createNativeFunction(
+                function getWalkLevel() {
+                    return self.walkLevel;
+                }));                                
             interpreter.setProperty(globalObject, 'bagHasSpace', interpreter.createNativeFunction(
                 function bagHasSpace() {
                     return self.bagSize - self.bag.length;
                 }));
-            interpreter.setProperty(globalObject, 'bagItemsCount', interpreter.createNativeFunction(
-                function bagItemsCount(itemName) {
+            interpreter.setProperty(globalObject, 'getBagItemsCount', interpreter.createNativeFunction(
+                function getBagItemsCount(itemName) {
                     return self.bagItemsCount(itemName);
                 }));
             interpreter.setProperty(globalObject, 'bagHasItem', interpreter.createNativeFunction(
                 function bagHasItem(itemName) {
                     return self.bagItemsCount(itemName) > 0;
                 }));
-            interpreter.setProperty(globalObject, 'placeItemsCount', interpreter.createNativeFunction(
-                function placeItemsCount(arg1, arg2, arg3) {
+            interpreter.setProperty(globalObject, 'getPlaceItemsCount', interpreter.createNativeFunction(
+                function getPlaceItemsCount(arg1, arg2, arg3) {
                     return self.placeItemsCount(arg1, arg2, arg3);
                 }));
             interpreter.setProperty(globalObject, 'placeHasItem', interpreter.createNativeFunction(
@@ -301,7 +318,7 @@ class Bot {
         }
     }
     moveTo(cell_i, cell_j) {
-        if(cell_i === undefined){
+        if (cell_i === undefined) {
             throw new Error('Missing argument on moveTo()')
         }
         const target = map.getTarget(cell_i, cell_j);
@@ -309,12 +326,16 @@ class Bot {
             this.sayAndWait(`Target not found: ${cell_i} ${cell_j}`, "red", 5);
             return;
         }
-        this.currentAction = new MoveToAnim(this, target.cell.i, target.cell.j);
+        const speed = 3 * this.getWalkSpeedBonus();
+        this.currentAction = new MoveToAnim(this, target.cell.i, target.cell.j, speed);
         const targetName = target.building != null ? target.building.name : `(${cell_i}, ${cell_j})`;
-        this.say(`Going to ${targetName}`, 'yellow', 1)
+        this.say(`Going to ${targetName}`, 'yellow', 1);
+        const current = this.getCell();
+        this.walkXp += Math.min(Math.abs(target.cell.i - current.i), Math.abs(target.cell.j - current.j));
+        this.onXpGained();
     }
     sayAndWait(msg, color, duration) {
-        if(msg === undefined){
+        if (msg === undefined) {
             throw new Error('Missing argument on say()')
         }
         this.currentAction = new WaitAnim(duration);
@@ -347,7 +368,8 @@ class Bot {
         }
         building.recipe.consumeIngredients(this);
         this.currentAction = new CraftAnim(this, building.recipe);
-
+        this.craftXp++;
+        this.onXpGained();
     }
     countItems(item) {
         return this.bag.filter(b => b.name === item.name).length;
@@ -364,8 +386,8 @@ class Bot {
     }
     take(itemName) {
         const item = map.takeItem(this.getCell(), itemName);
-        if (item == null) {            
-            this.sayAndWait(`No item ${itemName||''} to take`, "red", 5);
+        if (item == null) {
+            this.sayAndWait(`No item ${itemName || ''} to take`, "red", 5);
             return;
         }
         this.bag.push(item);
@@ -416,11 +438,43 @@ class Bot {
     placeItemsCount(arg1, arg2, arg3) {
         let count = map.placeItemsCount(arg1, arg2, arg3);
         if (count === null) {
-            this.sayAndWait(`Place not found: ${arg1} ${arg2||''}`);
+            this.sayAndWait(`Place not found: ${arg1} ${arg2 || ''}`);
             return 0;
         }
         this.currentAction = new WaitAnim(0.1);
         return count;
+    }
+    onXpGained() {
+        if (this.craftXp >= this.nextCraftLevelXp) {
+            this.craftXp = 0;
+            this.craftLevel = Math.min(this.craftLevel + 1, 10);
+            this.setNextLevelXp();
+        }
+        if (this.walkXp >= this.nextWalkLevelXp) {
+            this.walkXp = 0;
+            this.walkLevel = Math.min(this.walkLevel + 1, 10);
+            if (this.walkLevel >= 10) {
+                this.bagSize = 5;
+            } else if (this.walkLevel > 8) {
+                this.bagSize = 4;
+            } else if (this.walkLevel > 5) {
+                this.bagSize = 3;
+            }
+            this.setNextLevelXp();
+        }
+    }
+    getCraftSpeedBonus() {
+        return (10.0 + this.craftLevel) / 10;
+    }
+    getWalkSpeedBonus() {
+        return (10.0 + this.craftLevel) / 10;
+    }
+    setNextLevelXp() {
+        this.craftXp = 0;
+        this.walkXp = 0;
+        const xp = [100, 100, 100, 120, 150, 200, 250, 300, 400, 500];
+        this.nextCraftLevelXp = xp[Math.min(this.craftLevel, xp.length - 1)];
+        this.nextWalkLevelXp = xp[Math.min(this.walkLevel, xp.length - 1)];
     }
     isInside(event) {
         return event.offsetX >= this.x && event.offsetX < this.x + this.sprite.tWidth
@@ -429,13 +483,13 @@ class Bot {
 }
 
 class MoveToAnim {
-    constructor(item, cell_i, cell_j) {
+    constructor(item, cell_i, cell_j, speed) {
         this.item = item;
         cell_i = Math.max(0, Math.min(Math.floor(cell_i), Map.MaxX - 1));
         cell_j = Math.max(0, Math.min(Math.floor(cell_j), Map.MaxY - 1));
         this.destX = Map.BorderX + cell_i * 48 + 8;
         this.destY = Map.BorderY + cell_j * 48 + 10;
-        this.speed = 3;
+        this.speed = speed;
     }
     update() {
         const d = Math.sqrt(square(this.destX - this.item.x) + square(this.destY - this.item.y));
@@ -463,8 +517,7 @@ class CraftAnim {
         this.bot = bot;
         this.recipe = recipe;
         this.tick = 0;
-        this.maxTick = recipe.durationSec * 30;
-
+        this.maxTick = Math.max(1, Math.floor(recipe.durationSec * 30 / bot.getCraftSpeedBonus()));
     }
     update() {
         this.tick++;
@@ -1040,7 +1093,7 @@ class Map {
         return null;
     }
     getTarget(a, b) {
-        if(a === undefined){
+        if (a === undefined) {
             throw new Error('Missing argument on map.getTarget(a, b)')
         }
         if (b === undefined && a.toLowerCase) {
@@ -1255,7 +1308,7 @@ function setSelectedBot(botOrHeadquarters) {
     }
 }
 function displayError(bot) {
-    if(bot !== selectedBot){
+    if (bot !== selectedBot) {
         return;
     }
     const error = bot.error;

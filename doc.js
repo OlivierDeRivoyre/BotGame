@@ -304,8 +304,8 @@ waitForItem("apple");
 addPage('bag', [
 `<p>
 Bot <code>take()</code> items into its bag.
-A bot can carry <code>bagSize()</code> items in its bag. 
-While the size is 2 for a fresh bot, this <code>bagSize()</code> may level up.
+A bot can carry <code>getBagSize()</code> items in its bag. 
+While the size is 2 for a fresh bot, this <code>getBagSize()</code> level up with walk level.
 </p>
 <p>
 <code>bagHasSpace()</code> returns true if the bag has some empty space(s) for new item.
@@ -342,16 +342,37 @@ if(bagItemsCount("water") > 0){
 </pre></code>`,
 ]);
 
+addPage('Bot level', [
+`<p>
+Bot level on crafting on walking allow to craft and walk faster.
+Bot earn crafting xp by crafting, and walking xp by walking.
+</p>
+<p>
+Once reaching a walk level of 4, 8 and 10, the bag size increase.
+</p>
+`,
+`<code><pre>
+var craftLevel = getCraftLevel();
+say("My craft level is: " + craftLevel);
+var bonus = (10 + craftLevel) / 10;
+say("Craft speed bonus: x" + bonus.toFixed(2));
+var walkLevel = getWalkLevel();
+say("My walk level is: " + walkLevel);
+bonus = (10 + walkLevel) / 10;
+say("Walk speed bonus: x" + bonus.toFixed(2));
+</pre></code>`,
+]);
+
 addPage("place's items", [
 `<p>
-<code>placeHasItem()</code> and <code>placeItemsCount()</code> give information about items on the ground.
+<code>placeHasItem()</code> and <code>getPlaceItemsCount()</code> give information about items on the ground.
 </p>
 <p>
 Both methods accepts an <code>itemName</code> as last argument:
 </p>
 `,
 `<code><pre>
-var waterCount = placeItemsCount("tree", "water");
+var waterCount = getPlaceItemsCount("tree", "water");
 say("Water crafted on the tree: " + waterCount);
 if(placeHasItem("tree")) {
     say("There is items on the tree");
