@@ -16,7 +16,8 @@
     <br>
     <div style="display: flex;">
         <div style="flex-grow: 1;">
-            <textarea id="code" spellcheck="false" rows="12" cols="80" style="margin-right:0.5em">
+            <textarea id="code" spellcheck="false" rows="12" cols="80" style="margin-right:0.5em"
+                onkeydown="keepFocusOnTab(event, this)">
 while(true){
     moveTo("well");
     craft();
@@ -31,20 +32,40 @@ while(true){
             <br>
             <button onclick="runCode(document.getElementById('applyAll').checked)" id="runButton">Run</button>
             <input type="radio" name="applyTo" id="applyAll" />Apply all
-            <input type="radio" name="applyTo" checked="checked" /><label  id="applyOnlyTo" >Only on bot 1</label>
+            <input type="radio" name="applyTo" checked="checked" /><label id="applyOnlyTo">Only on bot 1</label>
             <!--<button onclick="stepButton()" id="stepButton" disabled="disabled">Step</button>
     <button onclick="clear()">Clear</button>-->
         </div>
         <div>
-            <select id="docCombo" onchange="showDoc(this.value)"></select>  
+            <select id="docCombo" onchange="showDoc(this.value)"></select>
             <div id="docContent"></div>
-        </div> 
+        </div>
     </div>
 </body>
 <script src="./libs/acorn.js"></script>
 <script src="./libs/interpreter.js"></script>
 <script src="game.js"></script>
 <script src="doc.js"></script>
+<script>
+    function keepFocusOnTab(e, textarea) {
+        if (e.key == 'Tab') {
+            e.preventDefault();
+
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selection = textarea.value.substring(start, start);
+            if (start != end && selection.trim() != "") {
+                return;
+            }
+            if (!e.shiftKey) {
+                const tabSpace = "    ";
+                textarea.value = textarea.value.substring(0, start) + tabSpace + textarea.value.substring(end);
+                textarea.selectionStart = start + tabSpace.length;
+                textarea.selectionEnd = start + tabSpace.length;
+            }
+        }
+    }
+</script>
 
 <!--
 Thanks to Shikashipx and 0x72 for theirs CCA/MIT work on the assets:
