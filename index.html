@@ -14,8 +14,9 @@
 <body>
     <canvas id="myCanvas" width="800" height="450" class="board"></canvas>
     <br>
-    <div style="display: flex;">
-        <div style="flex-grow: 1;">
+    <div style="display: flex;">        
+        <div style="flex-grow: 1;">     
+            <div id="error" style="color:red"></div>     
             <textarea id="code" spellcheck="false" rows="12" cols="80" style="margin-right:0.5em"
                 onkeydown="keepFocusOnTab(event, this)">
 while(true){
@@ -35,6 +36,7 @@ while(true){
             <input type="radio" name="applyTo" checked="checked" /><label id="applyOnlyTo">Only on bot 1</label>
             <!--<button onclick="stepButton()" id="stepButton" disabled="disabled">Step</button>
     <button onclick="clear()">Clear</button>-->
+            
         </div>
         <div>
             <select id="docCombo" onchange="showDoc(this.value)"></select>

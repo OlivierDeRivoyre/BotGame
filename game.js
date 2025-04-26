@@ -127,6 +127,7 @@ class Bot {
         this.bag = [];
         this.bagSize = 2;
         this.code = null;
+        this.error = null;
         this.sprite = botSprites[this.id % botSprites.length];
     }
     update() {
@@ -146,17 +147,26 @@ class Bot {
         }
     }
     runCode() {
-        for (let i = 0; i < 200; i++) {
-            if (this.interpreter == null || this.currentAction != null) {
-                return;
+        try {
+            for (let i = 0; i < 200; i++) {
+                if (this.interpreter == null || this.currentAction != null) {
+                    return;
+                }
+                if (!this.interpreter.step()) {
+                    this.interpreter = null;
+
+                    console.log("done");
+                    return;
+                }
             }
-            if (!this.interpreter.step()) {
-                this.interpreter = null;
-                console.log("done");
-                return;
-            }
+            console.log("timeout");
+        } catch (e) {
+            console.error(e);
+            this.say("error", "red", 10);
+            this.error = e;
+            this.interpreter = null;
+            displayError(this);
         }
-        console.log("timeout");
     }
     paint() {
         this.sprite.paint32(this.x, this.y);
@@ -204,6 +214,7 @@ class Bot {
     setCode(code) {
         const self = this;
         this.code = code;
+        this.error = null;
         function initInterpreter(interpreter, globalObject) {
             interpreter.setProperty(globalObject, 'moveTo', interpreter.createNativeFunction(
                 function moveTo(cell_i, cell_j) {
@@ -283,9 +294,16 @@ class Bot {
                     this.currentAction = new WaitAnim(0.1);
                 }));
         }
-        self.interpreter = new Interpreter(code, initInterpreter);
+        try {
+            self.interpreter = new Interpreter(code, initInterpreter);
+        } catch (e) {
+            self.error = e;
+        }
     }
     moveTo(cell_i, cell_j) {
+        if(cell_i === undefined){
+            throw new Error('Missing argument on moveTo()')
+        }
         const target = map.getTarget(cell_i, cell_j);
         if (target == null) {
             this.sayAndWait(`Target not found: ${cell_i} ${cell_j}`, "red", 5);
@@ -296,6 +314,9 @@ class Bot {
         this.say(`Going to ${targetName}`, 'yellow', 1)
     }
     sayAndWait(msg, color, duration) {
+        if(msg === undefined){
+            throw new Error('Missing argument on say()')
+        }
         this.currentAction = new WaitAnim(duration);
         this.say(msg, color, duration);
     }
@@ -343,8 +364,8 @@ class Bot {
     }
     take(itemName) {
         const item = map.takeItem(this.getCell(), itemName);
-        if (item == null) {
-            this.sayAndWait(`No item ${itemName} to take`, "red", 5);
+        if (item == null) {            
+            this.sayAndWait(`No item ${itemName||''} to take`, "red", 5);
             return;
         }
         this.bag.push(item);
@@ -394,8 +415,8 @@ class Bot {
     }
     placeItemsCount(arg1, arg2, arg3) {
         let count = map.placeItemsCount(arg1, arg2, arg3);
-        if(count === null){
-            this.sayAndWait(`Place not found: ${arg1} ${arg2}`);
+        if (count === null) {
+            this.sayAndWait(`Place not found: ${arg1} ${arg2||''}`);
             return 0;
         }
         this.currentAction = new WaitAnim(0.1);
@@ -641,7 +662,7 @@ class BuildingTile {
         this.recipe = recipe;
     }
     paint() {
-        if(!this.sprite){
+        if (!this.sprite) {
             return;
         }
         const coord = map.getCoord(this.cell);
@@ -651,7 +672,7 @@ class BuildingTile {
         let cursorY = tooltip.y + 22;
         let cursorX = tooltip.x + 8;
 
-        ctx.fillStyle = this.recipe? "orange" : "white";
+        ctx.fillStyle = this.recipe ? "orange" : "white";
         ctx.font = "bold 18px Verdana";
         ctx.fillText(this.name, cursorX, cursorY);
         cursorY += 18;
@@ -661,7 +682,7 @@ class BuildingTile {
         const moveTxt = `moveTo(${this.cell.i}, ${this.cell.j})`;
         ctx.fillText(moveTxt, cursorX, cursorY);
         cursorY += 16;
-        if(!this.recipe) {
+        if (!this.recipe) {
             return;
         }
         ctx.fillStyle = "white";
@@ -831,6 +852,7 @@ class Headquarters {
             new Mission(items.cloth, () => this.missionEnded()),
         ];
         this.code = "";
+        this.error = null;
     }
     paint() {
         const topX = Map.BorderX + this.cell.i * 48;
@@ -918,6 +940,9 @@ class Headquarters {
     }
     setCode(code) {
         this.code = code;
+        let fakeBot = new Bot(-1, 0, 0);
+        fakeBot.setCode(this.code);
+        this.error = fakeBot.error;
     }
 }
 const headquarters = new Headquarters();
@@ -1015,6 +1040,9 @@ class Map {
         return null;
     }
     getTarget(a, b) {
+        if(a === undefined){
+            throw new Error('Missing argument on map.getTarget(a, b)')
+        }
         if (b === undefined && a.toLowerCase) {
             for (let building of this.buildingTiles) {
                 if (building.name.toLowerCase() == a.toLowerCase()) {
@@ -1061,33 +1089,33 @@ class Map {
         }
         return itemStack.countItemsByName(itemName);
     }
-    createStoreroom(name, i, j, spriteIndex){
-        if(name.trim() == "" || !i.toFixed || !j.toFixed){
+    createStoreroom(name, i, j, spriteIndex) {
+        if (name.trim() == "" || !i.toFixed || !j.toFixed) {
             return;
         }
         const cell_i = Math.max(0, Math.min(Math.floor(i), Map.MaxX - 1));
         const cell_j = Math.max(0, Math.min(Math.floor(j), Map.MaxY - 1));
         let sprite = TileFactory.storeroomSprites[0];
-        if(spriteIndex && Number.isInteger(spriteIndex)) {
-            if(spriteIndex >= 0){
+        if (spriteIndex && Number.isInteger(spriteIndex)) {
+            if (spriteIndex >= 0) {
                 sprite = TileFactory.storeroomSprites[spriteIndex % TileFactory.storeroomSprites.length];
             } else {
                 sprite = null;
             }
         }
-        let room = new BuildingTile(name, {i: cell_i, j: cell_j}, sprite);
-        for(let i = this.storerooms.length - 1; i >= 0; i--){
+        let room = new BuildingTile(name, { i: cell_i, j: cell_j }, sprite);
+        for (let i = this.storerooms.length - 1; i >= 0; i--) {
             const old = this.storerooms[i];
-            if(old.name.toLowerCase() == room.name.toLowerCase() ||
-                (old.cell.i == room.cell.i && old.cell.j == old.cell.j)){
+            if (old.name.toLowerCase() == room.name.toLowerCase() ||
+                (old.cell.i == room.cell.i && old.cell.j == old.cell.j)) {
                 this.storerooms.splice(i, 1);
             }
         }
-        if(this.storerooms.length < 100){
+        if (this.storerooms.length < 100) {
             this.storerooms.push(room);
-        }        
+        }
     }
-    clearAllStorerooms(){
+    clearAllStorerooms() {
         this.storerooms = [];
     }
     click(event) {
@@ -1207,7 +1235,10 @@ function runCode(applyAll) {
     } else {
         selectedBot.setCode(code);
     }
-    save();
+    displayError(selectedBot);
+    if (!selectedBot.error) {
+        save();
+    }
 }
 tick();
 function setSelectedBot(botOrHeadquarters) {
@@ -1215,12 +1246,24 @@ function setSelectedBot(botOrHeadquarters) {
         selectedBot.code = document.getElementById('code').value;
         selectedBot = botOrHeadquarters;
         document.getElementById('code').value = botOrHeadquarters.code;
+        displayError(botOrHeadquarters);
         let applyLabel = `Only on ${botOrHeadquarters.id} - ${botOrHeadquarters.name}`;
         if (botOrHeadquarters === headquarters) {
             applyLabel = `For Headquarters, aka new bots`;
         }
         document.getElementById('applyOnlyTo').innerText = applyLabel;
     }
+}
+function displayError(bot) {
+    if(bot !== selectedBot){
+        return;
+    }
+    const error = bot.error;
+    if (!error) {
+        document.getElementById('error').innerText = "";
+        return;
+    }
+    document.getElementById('error').innerText = error.message;
 }
 function onmousedown(event) {
     if (tooltip.click(event)) {
