@@ -280,6 +280,23 @@ setName(newName);
 </pre></code>`
 ]);
 
+
+addPage('tryTake()', [
+`<p>
+Advanced take that accept failure.
+<code>tryTake()</code> returns false if the bot fails to take an item. 
+</p>
+`,
+`<code><pre>
+function waitForItem(itemName) {
+  while(!tryTake(itemName)){
+    wait(0.1);
+  }
+}
+waitForItem("apple");
+</pre></code>`
+]);
+
 addPage('Bot display', [
 `<p>
 Bot name can be changed.
@@ -298,22 +315,6 @@ for(var i = 0; i < 36; i++){
     setSkin(i);
     say("skin " + i);
 }
-</pre></code>`
-]);
-
-addPage('tryTake()', [
-`<p>
-Advanced take that accept failure.
-<code>tryTake()</code> returns false if the bot fails to take an item. 
-</p>
-`,
-`<code><pre>
-function waitForItem(itemName) {
-  while(!tryTake(itemName)){
-    wait(0.1);
-  }
-}
-waitForItem("apple");
 </pre></code>`
 ]);
 

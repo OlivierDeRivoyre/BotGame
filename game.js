@@ -61,7 +61,38 @@ class Sprite {
         )
     }
 }
-
+class DoubleSprite {
+    constructor(tile, tx, ty, tWidth, tHeight) {
+        this.tile = tile;
+        this.tx = tx;
+        this.ty = ty;
+        this.tWidth = tWidth || 48;
+        this.tHeight = tHeight || 48;
+    }
+    paint32(x, y, index, reverse) {
+        if(reverse){
+            this.paint32Reverse(x, y, index);
+            return;
+        }
+        ctx.drawImage(this.tile,
+            this.tx + index * this.tWidth, this.ty,
+            this.tWidth, this.tHeight,
+            x, y,
+            32, 32
+        );
+    }
+    paint32Reverse(x, y, index) {
+        ctx.save();
+        ctx.translate(x + this.tWidth, y);
+        ctx.scale(-1, 1);
+        ctx.drawImage(this.tile,
+            this.tx + index * this.tWidth, this.ty,
+            this.tWidth, this.tHeight,
+            0, 0, 32, 32
+        );
+        ctx.restore();
+    }
+}
 
 class PipoGoundTiles {
     constructor(index, name) {
@@ -104,16 +135,17 @@ function tick() {
     setTimeout(tick, tickDuration);
 }
 
+
 function getDungeonTileSetHeroSprite(i, j) {
     const x = 256 + i * 64;
     const y = j * 64;
     const topMargin = 16;
-    return new Sprite(dungeonTileSet, x, y + topMargin, 32, 64 - topMargin);
+    return new DoubleSprite(dungeonTileSet, x, y + topMargin, 32, 64 - topMargin);
 }
 function getDungeonTileSetVilainSprite(i) {
     const x = 736;
     const y = 18 + i * 48;
-    return new Sprite(dungeonTileSet, x, y, 32, 48);
+    return new DoubleSprite(dungeonTileSet, x, y, 32, 48);
 }
 function getDungeonTileSetSprite(index) {
     const i = index % (20 + 16)
@@ -126,8 +158,6 @@ function getDungeonTileSetSprite(index) {
     return getDungeonTileSetVilainSprite(i - 20);
 }
 
-//const healerSprite = new Sprite(dungeonTileSet, 256, 340, 32, 48);
-//const healerSprite = getDungeonTileSetSprite(0, 0);
 const botSprites = [...Array(36).keys()].map(i => getDungeonTileSetSprite(i));
 
 class Bot {
@@ -137,6 +167,8 @@ class Bot {
         this.y = y;
         this.name = "Bot " + id;
         this.currentAction = new WaitAnim(1.5);
+        this.tick = 0;
+        this.lookLeft = false;
         this.interpreter = null;
         this.cartoonBubble = null;
         this.bag = [];
@@ -153,6 +185,7 @@ class Bot {
         this.setNextLevelXp();
     }
     update() {
+        this.tick++;        
         if (this.currentAction != null) {
             const ended = this.currentAction.update(this);
             if (ended) {
@@ -191,7 +224,7 @@ class Bot {
         }
     }
     paint() {
-        this.sprite.paint32(this.x, this.y);
+        this.sprite.paint32(this.x, this.y, Math.floor(this.tick / 5) % 2, this.lookLeft);
         this.paintCartoonBubble();
         if (this.currentAction && this.currentAction.paint) {
             this.currentAction.paint();
@@ -287,7 +320,7 @@ class Bot {
             interpreter.setProperty(globalObject, 'setSkin', interpreter.createNativeFunction(
                 function setSkin(skinIndex) {
                     self.setSkin(skinIndex);
-                    this.currentAction = new WaitAnim(0.1);
+                    this.currentAction = new WaitAnim(0.3);
                 }));
             interpreter.setProperty(globalObject, 'getBotsCount', interpreter.createNativeFunction(
                 function getBotsCount() {
@@ -356,6 +389,7 @@ class Bot {
         const targetName = target.building != null ? target.building.name : `(${cell_i}, ${cell_j})`;
         this.say(`Going to ${targetName}`, 'yellow', 1);
         const current = this.getCell();
+        this.lookLeft = current.i > target.cell.i;
         this.walkXp += Math.min(Math.abs(target.cell.i - current.i), Math.abs(target.cell.j - current.j));
         this.onXpGained();
     }
