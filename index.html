@@ -20,14 +20,16 @@
             <textarea id="code" spellcheck="false" rows="12" cols="80" style="margin-right:0.5em"
                 onkeydown="keepFocusOnTab(event, this)">
 while(true){
-    moveTo("well");
-    craft();
-    take();
-    moveTo("tree");
-    craft();
-    take();
-    moveTo("Headquarters");
-    drop();
+  moveTo("well");
+  craft();
+  take();
+  moveTo("tree");
+  craft();
+  take();
+  moveTo("Headquarters");
+  drop();
+  wait(5);
+  say("Let's do it again");    
 }
             </textarea>
             <br>

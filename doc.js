@@ -56,6 +56,8 @@ while(true){
   take();
   moveTo("Headquarters");
   drop();
+  wait(5);
+  say("Let's do it again");    
 }
 </pre></code>`,
 `

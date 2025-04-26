@@ -70,6 +70,7 @@ class DoubleSprite {
         this.tHeight = tHeight || 48;
     }
     paint32(x, y, index, reverse) {
+        index |= 0; 
         if (reverse) {
             this.paint32Reverse(x, y, index);
             return;
@@ -91,7 +92,7 @@ class DoubleSprite {
             0, 0, 32, 32
         );
         ctx.restore();
-    }
+    }    
 }
 
 class PipoGoundTiles {
@@ -172,7 +173,7 @@ class Bot {
         this.x = x;
         this.y = y;
         this.name = "Bot " + id;
-        this.currentAction = new WaitAnim(1.5);
+        this.currentAction = new WaitAnim(2);
         this.tick = 0;
         this.lookLeft = false;
         this.interpreter = null;
@@ -1083,7 +1084,7 @@ class Headquarters {
     missionEnded() {
         this.addNewBot();
         this.level = this.missions[0].lvl + this.missions[1].lvl - 1;
-        const index = Math.floor(this.level / 2);
+        const index = Math.floor((this.level - 1) / 2);
         if (index >= this.sprites.length) {
             if (!this.ended) {
                 showEndGameScreen();
@@ -1096,8 +1097,8 @@ class Headquarters {
     addNewBot() {
         const coord = map.getCoord(this.cell);
         const bot = new Bot(bots.length + 1,
-            coord.x + Math.floor(Math.random() * 48),
-            coord.y + Math.floor(Math.random() * 48));
+            coord.x - 48 + Math.floor(Math.random() * 48 * 3),
+            coord.y + 32 + Math.floor(Math.random() * 24));
         bot.setCode(this.code);
         bots.push(bot);
     }
