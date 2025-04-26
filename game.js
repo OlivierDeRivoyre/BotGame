@@ -226,6 +226,10 @@ class Bot {
                 function take(itemName) {
                     self.take(itemName);
                 }));
+            interpreter.setProperty(globalObject, 'tryTake', interpreter.createNativeFunction(
+                function tryTake(itemName) {
+                   return self.tryTake(itemName);
+                }));
             interpreter.setProperty(globalObject, 'drop', interpreter.createNativeFunction(
                 function drop(itemName) {
                     self.drop(itemName);
@@ -243,6 +247,22 @@ class Bot {
                     if (name) {
                         self.name = name;
                     }
+                }));
+            interpreter.setProperty(globalObject, 'bagSize', interpreter.createNativeFunction(
+                function bagSize() {
+                    return self.bagSize;
+                }));
+            interpreter.setProperty(globalObject, 'bagHasSpace', interpreter.createNativeFunction(
+                function bagHasSpace() {
+                    return self.bagSize - self.bag.length;
+                }));
+            interpreter.setProperty(globalObject, 'bagItemsCount', interpreter.createNativeFunction(
+                function bagItemsCount(itemName) {                    
+                    return self.bagItemsCount(itemName);
+                }));
+            interpreter.setProperty(globalObject, 'bagHasItem', interpreter.createNativeFunction(
+                function bagHasItem(itemName) {
+                    return self.bagItemsCount(itemName) > 0;
                 }));
         }
         self.interpreter = new Interpreter(code, initInterpreter);
@@ -316,6 +336,20 @@ class Bot {
         }
         this.currentAction = new WaitAnim(0.1);
     }
+    tryTake(itemName) {
+        const item = map.takeItem(this.getCell(), itemName);
+        if (item == null) {
+            this.currentAction = new WaitAnim(0.1);
+            return false;
+        }
+        this.bag.push(item);
+        while (this.bag.length > this.bagSize) {
+            map.addItemOnGround(this.getCell(), this.bag[0]);
+            this.bag.splice(0, 1);
+        }
+        this.currentAction = new WaitAnim(0.1);
+        return true;
+    }
     drop(itemName) {
         if (this.bag.length == 0) {
             this.sayAndWait("No item in bag to drop", "red", 5);
@@ -333,6 +367,12 @@ class Bot {
         this.bag.splice(index, 1);
         this.currentAction = new WaitAnim(0.1);
         headquarters.update();
+    }
+    bagItemsCount(itemName) {
+        if(itemName && itemName.toLowerCase){
+            return this.bag.filter(item => item.name.toLowerCase() == itemName.toLowerCase()).length;
+        }
+        return this.bag.length;
     }
     isInside(event) {
         return event.offsetX >= this.x && event.offsetX < this.x + this.sprite.tWidth

@@ -262,7 +262,62 @@ say("I'm now " + getName());
 </pre></code>`
 ]);
 
+addPage('tryTake()', [
+`<p>
+Advanced take that accept failure.
+<code>tryTake()</code> returns false if the bot fails to take an item. 
+</p>
+`,
+`<code><pre>
+function waitForItem(itemName) {
+  while(!tryTake(itemName)){
+    wait(0.1);
+  }
+}
+waitForItem("apple");
+</pre></code>`
+]);
 
+addPage('bag', [
+`<p>
+Bot <code>take()</code> items into its bag.
+A bot can carry <code>bagSize()</code> items in its bag. 
+While the size is 2 for a fresh bot, this <code>bagSize()</code> may level up.
+</p>
+<p>
+<code>bagHasSpace()</code> returns true if the bag has some empty space(s) for new item.
+</p>
+`,
+`<code><pre>
+function craftUntilBagIsFull() {
+    while(bagHasSpace()){
+        craft();
+        take();
+    }
+}
+moveTo("well");
+craftUntilBagIsFull();
+</pre></code>`,
+`<p>
+<code>bagItemsCount()</code> returns the number of items in the bag. 
+It accepts an argument to filter by item type: <code>bagItemsCount("apple")</code>
+</p>`,
+`<p>
+<code>bagHasItems()</code> returns true if there is at least one item in the bag. 
+It accepts an argument to filter by item type: <code>bagHasItems("apple")</code>
+</p>`,
+`<code><pre>
+function dropAll(itemName) {
+    while(bagHasItem(itemName)){
+        drop(itemName);
+    }
+}
+if(bagItemsCount("water") > 0){
+  moveTo("tree");
+  dropAll("water");
+}
+</pre></code>`,
+]);
 
 
 
