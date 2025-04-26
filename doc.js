@@ -38,6 +38,45 @@ function formatCode(html){
     
     return html;
 }
+addPage('How to play', [
+`<p>
+You control the bot by giving him a JavaScript program to execute. 
+The goal is to drop stuff in the Headquarters in the center of the map.
+</p>
+
+<p>Here is an example script that you can run on the bot:</p>
+`,
+`<code><pre>
+while(true){
+  moveTo("well");
+  craft();
+  take();
+  moveTo("tree");
+  craft();
+  take();
+  moveTo("Headquarters");
+  drop();
+}
+</pre></code>`,
+`
+<p>
+Fulfill an objective give you a new bot. 
+You can set a program to the Headquarters, newly created bots will run it.
+</p>
+
+<p>
+You can use the standard ES5 JavaScript functions as 
+<code>var</code>, 
+<code>if</code>,
+<code>while</code>,
+<code>function</code>,
+<code>for</code>,.
+You also have access to the bot 
+functions that give order to the bot as 
+<code>moveTo("well")</code>.
+</p>
+`
+]);
 
 addPage('Sample of code', [
 `<code><pre>
@@ -65,22 +104,6 @@ while(true){
     bringAppleTo("Headquarters")
 }
 </pre></code>`
-]);
-
-addPage('How to play', [
-`<p>
-You control the bot by giving him a Javascript program to execute. 
-The goal is to drop stuff in the Headquarters in the center of the map.
-</p>
-<p>
-Fulfill an objective give you a new bot. 
-You can set a program to the Headquarters, newly created bots will run it.
-</p>
-<p>
-In addition of the standard ES5 JavaScript functions, you have access to the bot function that give order to the bot. 
-For example <code>moveTo("well")</code>.
-</p>
-`
 ]);
 
 addPage('moveTo()', [
@@ -345,6 +368,36 @@ if(placeHasItem(0, 3, "apple")) {
 </pre></code>`
 ]);
 
+addPage("Storeroom", [
+`<p>
+You may create storeroom on the map as place label. 
+Once created it may be used by all bots.
+</p>
+`,
+`<code><pre>
+if(getId() == 1){
+   clearAllStorerooms();
+   createStoreroom("myStore", 3, 4);
+}
+moveTo("myStore");
+</pre></code>`,
+`<p>
+You may change the display of the storeroom, and even make invisible ones.
+</p>
+`,
+`<code><pre>
+if(getId() == 1){
+   clearAllStorerooms();
+   createStoreroom("defaultIcon", 1, 4);
+   createStoreroom("sameThanDefaultIcon", 2, 4, 0);
+   createStoreroom("chest", 3, 4, 1);
+   createStoreroom("oldChest", 4, 4, 2);
+   createStoreroom("invisible", 5, 4, -1);
+   
+}
+moveTo("invisible");
+</pre></code>`
+]);
 
 
 

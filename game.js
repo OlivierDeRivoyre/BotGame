@@ -272,7 +272,16 @@ class Bot {
                 function placeHasItem(arg1, arg2, arg3) {
                     return self.placeItemsCount(arg1, arg2, arg3) > 0;
                 }));
-
+            interpreter.setProperty(globalObject, 'createStoreroom', interpreter.createNativeFunction(
+                function createStoreroom(name, i, j, spriteIndex) {
+                    map.createStoreroom(name, i, j, spriteIndex);
+                    this.currentAction = new WaitAnim(0.1);
+                }));
+            interpreter.setProperty(globalObject, 'clearAllStorerooms', interpreter.createNativeFunction(
+                function clearAllStorerooms() {
+                    map.clearAllStorerooms();
+                    this.currentAction = new WaitAnim(0.1);
+                }));
         }
         self.interpreter = new Interpreter(code, initInterpreter);
     }
@@ -632,6 +641,9 @@ class BuildingTile {
         this.recipe = recipe;
     }
     paint() {
+        if(!this.sprite){
+            return;
+        }
         const coord = map.getCoord(this.cell);
         this.sprite.paintNoScale(coord.x, coord.y);
     }
@@ -639,7 +651,7 @@ class BuildingTile {
         let cursorY = tooltip.y + 22;
         let cursorX = tooltip.x + 8;
 
-        ctx.fillStyle = "orange";
+        ctx.fillStyle = this.recipe? "orange" : "white";
         ctx.font = "bold 18px Verdana";
         ctx.fillText(this.name, cursorX, cursorY);
         cursorY += 18;
@@ -649,7 +661,9 @@ class BuildingTile {
         const moveTxt = `moveTo(${this.cell.i}, ${this.cell.j})`;
         ctx.fillText(moveTxt, cursorX, cursorY);
         cursorY += 16;
-
+        if(!this.recipe) {
+            return;
+        }
         ctx.fillStyle = "white";
         ctx.font = "12px Verdana";
         const craftTxt = `craft() ${this.recipe.output.name}  in ${this.recipe.durationSec} sec`;
@@ -758,6 +772,11 @@ class TileFactory {
         const tile = new BuildingTile("cauldron", { i: 6, j: 8 }, sprite, recipe);
         return tile;
     }
+    static storeroomSprites = [
+        getShikashiTile(13, 16),
+        getShikashiTile(11, 11),
+        getShikashiTile(14, 16),
+    ];
 }
 class Mission {
     constructor(item, onSuccessFunc) {
@@ -911,6 +930,7 @@ class Map {
     constructor() {
         this.buildingTiles = new TileFactory().createBuildingTiles();
         this.itemStacks = [];
+        this.storerooms = [];
     }
     paint() {
         waterTiles.paint(0, 0, Map.BorderX - 48, Map.BorderY - 48);
@@ -927,6 +947,9 @@ class Map {
                 greenGroundSprite.paintNoScale(Map.BorderX + i * 48, Map.BorderY + j * 48)
             }
             waterTiles.paint(1, 2, Map.BorderX + i * 48, Map.BorderY + Map.MaxY * 48)
+        }
+        for (let tile of this.storerooms) {
+            tile.paint();
         }
         for (let tile of this.buildingTiles) {
             tile.paint();
@@ -1001,6 +1024,11 @@ class Map {
             if (headquarters.name.toLowerCase() == a.toLowerCase()) {
                 return { building: headquarters, cell: headquarters.cell };
             }
+            for (let building of this.storerooms) {
+                if (building.name.toLowerCase() == a.toLowerCase()) {
+                    return { building, cell: building.cell };
+                }
+            }
             return null;
         } else if (a.toFixed && b.toFixed) {
             const cell_i = Math.max(0, Math.min(Math.floor(a), Map.MaxX - 1));
@@ -1033,8 +1061,43 @@ class Map {
         }
         return itemStack.countItemsByName(itemName);
     }
+    createStoreroom(name, i, j, spriteIndex){
+        if(name.trim() == "" || !i.toFixed || !j.toFixed){
+            return;
+        }
+        const cell_i = Math.max(0, Math.min(Math.floor(i), Map.MaxX - 1));
+        const cell_j = Math.max(0, Math.min(Math.floor(j), Map.MaxY - 1));
+        let sprite = TileFactory.storeroomSprites[0];
+        if(spriteIndex && Number.isInteger(spriteIndex)) {
+            if(spriteIndex >= 0){
+                sprite = TileFactory.storeroomSprites[spriteIndex % TileFactory.storeroomSprites.length];
+            } else {
+                sprite = null;
+            }
+        }
+        let room = new BuildingTile(name, {i: cell_i, j: cell_j}, sprite);
+        for(let i = this.storerooms.length - 1; i >= 0; i--){
+            const old = this.storerooms[i];
+            if(old.name.toLowerCase() == room.name.toLowerCase() ||
+                (old.cell.i == room.cell.i && old.cell.j == old.cell.j)){
+                this.storerooms.splice(i, 1);
+            }
+        }
+        if(this.storerooms.length < 100){
+            this.storerooms.push(room);
+        }        
+    }
+    clearAllStorerooms(){
+        this.storerooms = [];
+    }
     click(event) {
         for (let building of this.buildingTiles) {
+            if (this.isInside(event, building.cell)) {
+                tooltip.setSelection(building);
+                return;
+            }
+        }
+        for (let building of this.storerooms) {
             if (this.isInside(event, building.cell)) {
                 tooltip.setSelection(building);
                 return;
@@ -1192,7 +1255,7 @@ function restore() {
 }
 restore();
 
-map.addItemOnGround({ i: 0, j: 3 }, items.cloth);
-map.addItemOnGround({ i: 0, j: 3 }, items.water);
-map.addItemOnGround({ i: 0, j: 3 }, items.apple);
-map.addItemOnGround({ i: 0, j: 3 }, items.ironOre);
+//map.addItemOnGround({ i: 0, j: 3 }, items.cloth);
+//map.addItemOnGround({ i: 0, j: 3 }, items.water);
+//map.addItemOnGround({ i: 0, j: 3 }, items.apple);
+//map.addItemOnGround({ i: 0, j: 3 }, items.ironOre);
