@@ -228,7 +228,7 @@ class Bot {
                 }));
             interpreter.setProperty(globalObject, 'tryTake', interpreter.createNativeFunction(
                 function tryTake(itemName) {
-                   return self.tryTake(itemName);
+                    return self.tryTake(itemName);
                 }));
             interpreter.setProperty(globalObject, 'drop', interpreter.createNativeFunction(
                 function drop(itemName) {
@@ -257,13 +257,22 @@ class Bot {
                     return self.bagSize - self.bag.length;
                 }));
             interpreter.setProperty(globalObject, 'bagItemsCount', interpreter.createNativeFunction(
-                function bagItemsCount(itemName) {                    
+                function bagItemsCount(itemName) {
                     return self.bagItemsCount(itemName);
                 }));
             interpreter.setProperty(globalObject, 'bagHasItem', interpreter.createNativeFunction(
                 function bagHasItem(itemName) {
                     return self.bagItemsCount(itemName) > 0;
                 }));
+            interpreter.setProperty(globalObject, 'placeItemsCount', interpreter.createNativeFunction(
+                function placeItemsCount(arg1, arg2, arg3) {
+                    return self.placeItemsCount(arg1, arg2, arg3);
+                }));
+            interpreter.setProperty(globalObject, 'placeHasItem', interpreter.createNativeFunction(
+                function placeHasItem(arg1, arg2, arg3) {
+                    return self.placeItemsCount(arg1, arg2, arg3) > 0;
+                }));
+
         }
         self.interpreter = new Interpreter(code, initInterpreter);
     }
@@ -369,10 +378,19 @@ class Bot {
         headquarters.update();
     }
     bagItemsCount(itemName) {
-        if(itemName && itemName.toLowerCase){
+        if (itemName && itemName.toLowerCase) {
             return this.bag.filter(item => item.name.toLowerCase() == itemName.toLowerCase()).length;
         }
         return this.bag.length;
+    }
+    placeItemsCount(arg1, arg2, arg3) {
+        let count = map.placeItemsCount(arg1, arg2, arg3);
+        if(count === null){
+            this.sayAndWait(`Place not found: ${arg1} ${arg2}`);
+            return 0;
+        }
+        this.currentAction = new WaitAnim(0.1);
+        return count;
     }
     isInside(event) {
         return event.offsetX >= this.x && event.offsetX < this.x + this.sprite.tWidth
@@ -517,6 +535,19 @@ class ItemStackTile {
             }
         }
         return 0;
+    }
+    countItemsByName(itemName) {
+        let total = 0;
+        for (let b of this.buckets) {
+            if (itemName && itemName.toLowerCase) {
+                if (b.item.name.toLowerCase() === itemName.toLowerCase()) {
+                    return b.count;
+                }
+            } else {
+                total += b.count;
+            }
+        }
+        return total;
     }
     removeItems(item, count) {
         for (let i = 0; i < this.buckets.length; i++) {
@@ -971,7 +1002,7 @@ class Map {
                 return { building: headquarters, cell: headquarters.cell };
             }
             return null;
-        } else {
+        } else if (a.toFixed && b.toFixed) {
             const cell_i = Math.max(0, Math.min(Math.floor(a), Map.MaxX - 1));
             const cell_j = Math.max(0, Math.min(Math.floor(b), Map.MaxY - 1));
             for (let building of this.buildingTiles) {
@@ -981,6 +1012,26 @@ class Map {
             }
             return { building: null, cell: { i: cell_i, j: cell_j } };
         }
+        return null;
+    }
+    placeItemsCount(arg1, arg2, arg3) {
+        let place = null;
+        let itemName;
+        if (arg1.toFixed && arg2.toFixed) {
+            place = this.getTarget(arg1, arg2);
+            itemName = arg3;
+        } else {
+            place = this.getTarget(arg1);
+            itemName = arg2;
+        }
+        if (place == null) {
+            return null;// place not found
+        }
+        let itemStack = this.getItemStackAt(place.cell);
+        if (itemStack == null) {
+            return 0;
+        }
+        return itemStack.countItemsByName(itemName);
     }
     click(event) {
         for (let building of this.buildingTiles) {

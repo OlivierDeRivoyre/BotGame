@@ -319,6 +319,33 @@ if(bagItemsCount("water") > 0){
 </pre></code>`,
 ]);
 
+addPage("place's items", [
+`<p>
+<code>placeHasItem()</code> and <code>placeItemsCount()</code> give information about items on the ground.
+</p>
+<p>
+Both methods accepts an <code>itemName</code> as last argument:
+</p>
+`,
+`<code><pre>
+var waterCount = placeItemsCount("tree", "water");
+say("Water crafted on the tree: " + waterCount);
+if(placeHasItem("tree")) {
+    say("There is items on the tree");
+}
+if(placeHasItem("tree", "apple")) {
+    say("There is apple on the tree");
+}
+if(placeHasItem(0, 3)) {
+    say("There is items at coordonate (0,3)");
+}
+if(placeHasItem(0, 3, "apple")) {
+    say("There is apple at coordonate (0,3)");
+}  
+</pre></code>`
+]);
+
+
 
 
 
