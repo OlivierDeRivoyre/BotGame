@@ -1045,7 +1045,7 @@ class Headquarters {
         cursorY += 4;
         ctx.fillStyle = "yellow";
         ctx.font = "12px Verdana";
-        const craftTxt = `Objective:`;
+        const craftTxt = `Objectives:`;
         ctx.fillText(craftTxt, cursorX, cursorY);
         cursorY += 12;
 
@@ -1053,9 +1053,9 @@ class Headquarters {
         for (let i = 0; i < this.missions.length; i++) {
             const mission = this.missions[i];
             if (i != 0) {
-                ctx.fillStyle = "white";
+                ctx.fillStyle = "yellow";
                 ctx.font = "12px Verdana";
-                ctx.fillText("or", x, cursorY + 20);
+                ctx.fillText("or", x, cursorY + 30);
                 x += 36;
             }
             mission.item.paintForTooltip(x, cursorY, 1);
