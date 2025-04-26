@@ -70,7 +70,7 @@ class DoubleSprite {
         this.tHeight = tHeight || 48;
     }
     paint32(x, y, index, reverse) {
-        if(reverse){
+        if (reverse) {
             this.paint32Reverse(x, y, index);
             return;
         }
@@ -122,9 +122,13 @@ class PipoGoundTiles {
 const waterTiles = new PipoGoundTiles(5, "water");
 
 const tickDuration = 1000.0 / 30;
+let tickNumber = 0;
 function tick() {
-    for (let bot of bots) {
-        bot.update();
+    if (dialog == null) {
+        tickNumber++;
+        for (let bot of bots) {
+            bot.update();
+        }
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     map.paint();
@@ -132,9 +136,11 @@ function tick() {
         bot.paint();
     }
     tooltip.paint();
+    if (dialog != null) {
+        dialog.paint();
+    }
     setTimeout(tick, tickDuration);
 }
-
 
 function getDungeonTileSetHeroSprite(i, j) {
     const x = 256 + i * 64;
@@ -185,7 +191,7 @@ class Bot {
         this.setNextLevelXp();
     }
     update() {
-        this.tick++;        
+        this.tick++;
         if (this.currentAction != null) {
             const ended = this.currentAction.update(this);
             if (ended) {
@@ -957,17 +963,43 @@ class Mission {
         return this.getSlowCurve(this.lvl);
     }
 }
+class HeadquartersBigSprite {
+    constructor(cellX, cellY, cellWidth, cellHeight) {
+        this.sprite = new Sprite(pipoBuildingTileSet, cellX * 48, cellY * 48, cellWidth * 48, cellHeight * 48)
+        this.offSetX = 48 * (cellWidth - 1) / 2;
+        this.offSetY = 48 * (cellHeight - 1);
+    }
+    paintNoScale(x, y) {
+        this.sprite.paintNoScale(x - this.offSetX, y - this.offSetY);
+    }
+}
 class Headquarters {
     constructor() {
         this.name = "Headquarters";
-        this.cell = { i: 7, j: 4 }
-        this.sprite = getPipoTile(1, 10);
+        this.cell = { i: 5, j: 4 }
+        this.sprites = [
+            getShikashiTile(3, 4),
+            getPipoTile(0, 7),
+            getPipoTile(0, 9),
+            getPipoTile(0, 10),
+            getPipoTile(1, 10),
+            getPipoTile(1, 9),
+            getPipoTile(2, 10),
+            getPipoTile(2, 9),
+            getPipoTile(0, 8),
+            new HeadquartersBigSprite(6, 8, 1, 2),
+            new HeadquartersBigSprite(5, 8, 1, 2),
+            new HeadquartersBigSprite(5, 6, 2, 2),
+            new HeadquartersBigSprite(3, 11, 3, 3),
+        ];
+        this.sprite = this.sprites[0];
         this.missions = [
             new Mission(items.apple, () => this.missionEnded()),
             new Mission(items.cloth, () => this.missionEnded()),
         ];
         this.code = "";
         this.error = null;
+        this.level = 1;
     }
     paint() {
         const topX = Map.BorderX + this.cell.i * 48;
@@ -1001,10 +1033,16 @@ class Headquarters {
 
         ctx.fillStyle = "white";
         ctx.font = "12px Verdana";
+        ctx.fillText(`Level ${this.level}`, cursorX, cursorY);
+        cursorY += 18;
+
+        ctx.fillStyle = "white";
+        ctx.font = "12px Verdana";
         const moveTxt = `moveTo(${this.cell.i}, ${this.cell.j}); drop();`;
         ctx.fillText(moveTxt, cursorX, cursorY);
-        cursorY += 24;
+        cursorY += 18;
 
+        cursorY += 4;
         ctx.fillStyle = "yellow";
         ctx.font = "12px Verdana";
         const craftTxt = `Objective:`;
@@ -1044,6 +1082,16 @@ class Headquarters {
     }
     missionEnded() {
         this.addNewBot();
+        this.level = this.missions[0].lvl + this.missions[1].lvl - 1;
+        const index = Math.floor(this.level / 2);
+        if (index >= this.sprites.length) {
+            if (!this.ended) {
+                showEndGameScreen();
+            }
+            this.ended = true;
+            return;
+        }
+        this.sprite = this.sprites[index];
     }
     addNewBot() {
         const coord = map.getCoord(this.cell);
@@ -1355,7 +1403,7 @@ function runCode(applyAll) {
         save();
     }
 }
-tick();
+
 function setSelectedBot(botOrHeadquarters) {
     if (selectedBot != botOrHeadquarters) {
         selectedBot.code = document.getElementById('code').value;
@@ -1381,6 +1429,10 @@ function displayError(bot) {
     document.getElementById('error').innerText = error.message;
 }
 function onmousedown(event) {
+    if (dialog != null) {
+        dialog.click(event);
+        return;
+    }
     if (tooltip.click(event)) {
         return;
     }
@@ -1413,7 +1465,63 @@ function restore() {
 }
 restore();
 
+class EndGameDialog {
+    constructor(ticks) {
+        let playedSec = (ticks / 30).toFixed(3);
+        let hour = Math.floor(playedSec / 3600);
+        let min = Math.floor((playedSec - hour * 3600) / 60);
+        let sec = Math.floor(playedSec - hour * 3600 - min * 60);
+        let milli = Math.floor((playedSec - Math.floor(playedSec)) * 1000);
+        hour = hour.toLocaleString(undefined, { minimumIntegerDigits: 2 });
+        min = min.toLocaleString(undefined, { minimumIntegerDigits: 2 });
+        sec = sec.toLocaleString(undefined, { minimumIntegerDigits: 2 });
+        milli = milli.toLocaleString(undefined, { minimumIntegerDigits: 3 });
+        this.timePlayed = `${hour}:${min}:${sec}.${milli}`
+        this.window ={ x: 100, y: 100, width: CanvasWidth - 200, height: CanvasHeight - 200};
+        this.button = { x: 390, y: 280, width: 280, height: 48, label: "Keep playing" };
+    }
+    update() { }
+    paint() {
+        ctx.fillStyle = "#fffd";
+        ctx.fillRect(this.window.x, this.window.y, this.window.width, this.window.height);
+
+        ctx.fillStyle = "green";
+        ctx.font = "36px Verdana";
+        ctx.fillText("Victory!", this.window.x + 200, this.window.y + 50);
+        ctx.fillStyle = "black";
+        ctx.font = "24px Verdana";
+        ctx.fillText(`You ended the game in ${this.timePlayed}`, this.window.x + 50, this.window.y + 120);
+        this.paintButton();
+    }
+    paintButton() {
+        ctx.fillStyle = "gray";
+        ctx.fillRect(this.button.x, this.button.y, this.button.width, this.button.height);
+
+        ctx.fillStyle = "black";
+        ctx.font = "32px Verdana";
+        if (this.button.textX == null) {
+            const textWidth = ctx.measureText(this.button.label).width;
+            this.button.textX = this.button.x + this.button.width / 2 - textWidth / 2;
+        }
+        ctx.fillText(this.button.label, this.button.textX, this.button.y + 33);
+    }
+    click(event) {
+        if (isInsideCoord(event, this.button)) {
+            dialog = null;
+        }
+    }
+}
+let dialog = null;
+function showEndGameScreen() {
+    dialog = new EndGameDialog(tickNumber);
+}
+//dialog = new EndGameDialog(1000000);
+//headquarters.missions[1].lvl = 100;
 //map.addItemOnGround({ i: 0, j: 3 }, items.cloth);
 //map.addItemOnGround({ i: 0, j: 3 }, items.water);
 //map.addItemOnGround({ i: 0, j: 3 }, items.apple);
 //map.addItemOnGround({ i: 0, j: 3 }, items.ironOre);
+
+
+
+tick();
