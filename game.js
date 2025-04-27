@@ -184,8 +184,8 @@ class Bot {
         this.error = null;
         this.sprite = botSprites[this.id % botSprites.length];
         this.bagSize = 2;
-        this.craftLevel = Math.floor(Math.random() * 3);
-        this.walkLevel = Math.floor(Math.random() * 3);
+        this.craftLevel = 0;
+        this.walkLevel = 0;
         this.craftXp = 0;
         this.walkXp = 0;
         this.nextCraftLevelXp = 100;
