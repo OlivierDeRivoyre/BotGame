@@ -5,6 +5,7 @@ const canvas = document.getElementById("myCanvas");
 canvas.onmousedown = onmousedown;
 const ctx = canvas.getContext("2d");
 console.clear();
+
 function square(x) {
     return x * x;
 }
@@ -320,14 +321,14 @@ class Bot {
             interpreter.setProperty(globalObject, 'setName', interpreter.createNativeFunction(
                 function setName(name) {
                     if (name) {
-                        this.currentAction = new WaitAnim(0.1);
+                        self.currentAction = new WaitAnim(0.1);
                         self.name = name;
                     }
                 }));
             interpreter.setProperty(globalObject, 'setSkin', interpreter.createNativeFunction(
                 function setSkin(skinIndex) {
                     self.setSkin(skinIndex);
-                    this.currentAction = new WaitAnim(0.3);
+                    self.currentAction = new WaitAnim(0.3);
                 }));
             interpreter.setProperty(globalObject, 'getBotsCount', interpreter.createNativeFunction(
                 function getBotsCount() {
@@ -365,15 +366,20 @@ class Bot {
                 function placeHasItem(arg1, arg2, arg3) {
                     return self.placeItemsCount(arg1, arg2, arg3) > 0;
                 }));
+            interpreter.setProperty(globalObject, 'getAMissingIngredient', interpreter.createNativeFunction(
+                function getAMissingIngredient(cell_i, cell_j) {
+                    self.currentAction = new WaitAnim(0.25);
+                    return map.getAMissingIngredient(self, cell_i, cell_j);
+                }));                
             interpreter.setProperty(globalObject, 'createStoreroom', interpreter.createNativeFunction(
                 function createStoreroom(name, i, j, spriteIndex) {
                     map.createStoreroom(name, i, j, spriteIndex);
-                    this.currentAction = new WaitAnim(0.1);
+                    self.currentAction = new WaitAnim(0.1);
                 }));
             interpreter.setProperty(globalObject, 'clearAllStorerooms', interpreter.createNativeFunction(
                 function clearAllStorerooms() {
                     map.clearAllStorerooms();
-                    this.currentAction = new WaitAnim(0.1);
+                    self.currentAction = new WaitAnim(0.1);
                 }));
         }
         try {
@@ -750,18 +756,22 @@ class Recipe {
         this.durationSec = durationSec;
         this.inputs = inputs;
     }
-    countItems(item, bot) {
+    countItems(item, bot, cell) {
         const onBot = bot.countItems(item);
-        const onMap = map.countItems(bot.getCell(), item);
+        const onMap = map.countItems(cell, item);
         return onBot + onMap;
     }
-    hasItems(bot) {
+    getAMissingIngredient(bot, cell){
         for (let ingredient of this.inputs) {
-            if (this.countItems(ingredient.item, bot) < ingredient.count) {
-                return false;
+            if (this.countItems(ingredient.item, bot, cell) < ingredient.count) {
+                return ingredient.item.name;
             }
         }
-        return true;
+        return null;
+    }
+    hasItems(bot) {
+        const cell = bot.getCell();        
+        return this.getAMissingIngredient(bot, cell) == null;
     }
     consumeIngredients(bot) {
         for (let ingredient of this.inputs) {
@@ -825,7 +835,6 @@ class BuildingTile {
         this.recipe.output.paintForTooltip(x + 30, cursorY);
     }
 }
-
 class TileFactory {
     createBuildingTiles() {
         return [
@@ -845,25 +854,25 @@ class TileFactory {
     createWaterWell() {
         const sprite = getPipoTile(6, 1);
         const recipe = new Recipe(items.water, 1.5, []);
-        const tile = new BuildingTile("well", { i: 0, j: 3 }, sprite, recipe);
+        const tile = new BuildingTile("Well", { i: 0, j: 3 }, sprite, recipe);
         return tile;
     }
     createAppleTree() {
         const sprite = getPipoTile(2, 1);
         const recipe = new Recipe(items.apple, 1.5, [{ item: items.water, count: 1 }]);
-        const tile = new BuildingTile("tree", { i: 2, j: 0 }, sprite, recipe);
+        const tile = new BuildingTile("Tree", { i: 2, j: 0 }, sprite, recipe);
         return tile;
     }
     createDune() {
         const sprite = getPipoTile(2, 0);
         const recipe = new Recipe(items.sand, 0.3, []);
-        const tile = new BuildingTile("dune", { i: 15, j: 0 }, sprite, recipe);
+        const tile = new BuildingTile("Dune", { i: 15, j: 0 }, sprite, recipe);
         return tile;
     }
     createCotonField() {
         const sprite = getPipoTile(1, 0);
         const recipe = new Recipe(items.coton, 1.5, [{ item: items.water, count: 1 }]);
-        const tile = new BuildingTile("cotonField", { i: 0, j: 8 }, sprite, recipe);
+        const tile = new BuildingTile("CotonField", { i: 0, j: 8 }, sprite, recipe);
         return tile;
     }
     createClothFactory() {
@@ -871,31 +880,31 @@ class TileFactory {
         const recipe = new Recipe(items.cloth, 3, [
             { item: items.blueSpool, count: 4 },
             { item: items.spool, count: 1 }]);
-        const tile = new BuildingTile("clothFactory", { i: 9, j: 5 }, sprite, recipe);
+        const tile = new BuildingTile("ClothFactory", { i: 9, j: 5 }, sprite, recipe);
         return tile;
     }
     createFire() {
         const sprite = getShikashiTile(2, 4);
         const recipe = new Recipe(items.flask, 2, [{ item: items.sand, count: 1 }]);
-        const tile = new BuildingTile("fire", { i: 14, j: 4 }, sprite, recipe);
+        const tile = new BuildingTile("Fire", { i: 14, j: 4 }, sprite, recipe);
         return tile;
     }
     createMine() {
         const sprite = getPipoTile(7, 3);
         const recipe = new Recipe(items.ironOre, 1.7, []);
-        const tile = new BuildingTile("mine", { i: 8, j: 0 }, sprite, recipe);
+        const tile = new BuildingTile("Mine", { i: 8, j: 0 }, sprite, recipe);
         return tile;
     }
     createAnvil() {
         const sprite = getShikashiTile(4, 4);
         const recipe = new Recipe(items.powder, 1, [{ item: items.ironOre, count: 1 }]);
-        const tile = new BuildingTile("anvil", { i: 9, j: 2 }, sprite, recipe);
+        const tile = new BuildingTile("Anvil", { i: 9, j: 2 }, sprite, recipe);
         return tile;
     }
     createLoom() {
         const sprite = getShikashiTile(11, 16);
         const recipe = new Recipe(items.spool, 1, [{ item: items.coton, count: 2 }]);
-        const tile = new BuildingTile("loom", { i: 3, j: 7 }, sprite, recipe);
+        const tile = new BuildingTile("Loom", { i: 3, j: 7 }, sprite, recipe);
         return tile;
     }
     createMortar() {
@@ -904,7 +913,7 @@ class TileFactory {
             { item: items.powder, count: 1 },
             { item: items.water, count: 1 },
             { item: items.flask, count: 1 }]);
-        const tile = new BuildingTile("mortar", { i: 11, j: 3 }, sprite, recipe);
+        const tile = new BuildingTile("Mortar", { i: 11, j: 3 }, sprite, recipe);
         return tile;
     }
     createCauldron() {
@@ -912,7 +921,7 @@ class TileFactory {
         const recipe = new Recipe(items.blueSpool, 1, [
             { item: items.spool, count: 1 },
             { item: items.ink, count: 1 }]);
-        const tile = new BuildingTile("cauldron", { i: 6, j: 8 }, sprite, recipe);
+        const tile = new BuildingTile("Cauldron", { i: 6, j: 8 }, sprite, recipe);
         return tile;
     }
     static storeroomSprites = [
@@ -1084,6 +1093,7 @@ class Headquarters {
     missionEnded() {
         this.addNewBot();
         this.level = this.missions[0].lvl + this.missions[1].lvl - 1;
+        console.log(`${new Date()} Level ${this.level}: ${this.missions[0].lvl} + ${this.missions[1].lvl}`)
         const index = Math.floor((this.level - 1) / 2);
         if (index >= this.sprites.length) {
             if (!this.ended) {
@@ -1203,6 +1213,14 @@ class Map {
         }
         return null;
     }
+    getCellTarget(cell){
+        for (let building of this.buildingTiles) {
+            if (building.cell.i == cell.i && building.cell.j == cell.j) {
+                return { building, cell: cell };
+            }
+        }
+        return { building: null, cell: cell };
+    }
     getTarget(a, b) {
         if (a === undefined) {
             throw new Error('Missing argument on map.getTarget(a, b)')
@@ -1223,16 +1241,25 @@ class Map {
             }
             return null;
         } else if (a.toFixed && b.toFixed) {
-            const cell_i = Math.max(0, Math.min(Math.floor(a), Map.MaxX - 1));
-            const cell_j = Math.max(0, Math.min(Math.floor(b), Map.MaxY - 1));
-            for (let building of this.buildingTiles) {
-                if (building.cell.i == cell_i && building.cell.j == cell_j) {
-                    return { building, cell: building.cell };
-                }
-            }
-            return { building: null, cell: { i: cell_i, j: cell_j } };
+            const i = Math.max(0, Math.min(Math.floor(a), Map.MaxX - 1));
+            const j = Math.max(0, Math.min(Math.floor(b), Map.MaxY - 1));
+            return getCellTarget({i, j});
         }
         return null;
+    }
+    getAMissingIngredient(bot, a, b){
+        const target = (a === undefined) ? this.getCellTarget(bot.getCell()) : this.getTarget(a, b);
+        if(target == null){
+            throw new Error(`getAMissingIngredient(${a|''} ${b|''}): no place found`);
+        }
+        if(target.building == null){
+            throw new Error(`getAMissingIngredient(${a|''} ${b|''}): no craft station here`);
+        }
+        if(target.building.recipe == null){
+            throw new Error(`getAMissingIngredient(${a|''} ${b|''}): no craft recipe here`);
+        }
+        const recipe = target.building.recipe;
+        return recipe.getAMissingIngredient(bot, target.cell);
     }
     placeItemsCount(arg1, arg2, arg3) {
         let place = null;

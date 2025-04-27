@@ -48,10 +48,10 @@ The goal is to drop stuff in the Headquarters in the center of the map.
 `,
 `<code><pre>
 while(true){
-  moveTo("well");
+  moveTo("Well");
   craft();
   take();
-  moveTo("tree");
+  moveTo("Tree");
   craft();
   take();
   moveTo("Headquarters");
@@ -75,7 +75,7 @@ You can use the standard ES5 JavaScript functions as
 <code>for</code>,.
 You also have access to the bot 
 functions that give order to the bot as 
-<code>moveTo("well")</code>.
+<code>moveTo("Well")</code>.
 </p>
 `
 ]);
@@ -114,18 +114,18 @@ Order the bot to move to the well known place.
 Case is insensitive for the place name.
 </p>`,
 `<code><pre>
-moveTo("well");
-moveTo("tree");
-moveTo("headquarters");
-moveTo("cotonField");
-moveTo("loom");
-moveTo("mine");
-moveTo("anvil");
-moveTo("dune");
-moveTo("fire");
-moveTo("mortar");
-moveTo("cauldron");
-moveTo("clothFactory");
+moveTo("Well");
+moveTo("Tree");
+moveTo("Headquarters");
+moveTo("CotonField");
+moveTo("Loom");
+moveTo("Mine");
+moveTo("Anvil");
+moveTo("Dune");
+moveTo("Fire");
+moveTo("Mortar");
+moveTo("Cauldron");
+moveTo("ClothFactory");
 </pre></code>`,
 `<p>
 <code>moveTo(x, y)</code> may also be used.
@@ -155,10 +155,10 @@ The bot may <code>take()</code> it to bring it to another place.
 </p>
 `,
 `<code><pre>
-moveTo("well");
+moveTo("Well");
 craft();
 take();
-moveTo("tree");
+moveTo("Tree");
 drop();
 </pre></code>`
 ]);
@@ -179,7 +179,7 @@ will automatically drop the oldest item from its bag.
 `<code><pre>
 moveTo("well");
 craft(); craft();
-take(); take("water");
+take(); take("Water");
 moveTo("tree");
 drop(); drop();
 </pre></code>`,
@@ -190,16 +190,16 @@ Without argument, the bot take the most advanced item by default.
 </p>`,
 `<code><pre>
 take();
-take("water");
-take("apple");
-take("sand");
-take("flask");
-take("ironOre");
-take("ink");
-take("coton");
-take("spool");
-take("blueSpool");
-take("cloth");
+take("Water");
+take("Apple");
+take("Sand");
+take("Flask");
+take("IronOre");
+take("Ink");
+take("Coton");
+take("Spool");
+take("BlueSpool");
+take("Cloth");
 </pre></code>`
 ]);
 
@@ -211,27 +211,27 @@ By default, the bot drops the oldest item from its bag.
 </p>
 `,
 `<code><pre>
-moveTo("well");
+moveTo("Well");
 craft(); 
 take(); 
-moveTo("tree");
+moveTo("Tree");
 craft(); 
 take(); 
-moveTo("headquarters");
+moveTo("Headquarters");
 drop(); 
 </pre></code>`,
 `<code><pre>
 drop();
-drop("water");
-drop("apple");
-drop("sand");
-drop("flask");
-drop("ironOre");
-drop("ink");
-drop("coton");
-drop("spool");
-drop("blueSpool");
-drop("cloth");
+drop("Water");
+drop("Apple");
+drop("Sand");
+drop("Flask");
+drop("IronOre");
+drop("Ink");
+drop("Coton");
+drop("Spool");
+drop("BlueSpool");
+drop("Cloth");
 </pre></code>`
 ]);
 
@@ -295,7 +295,7 @@ function waitForItem(itemName) {
     wait(0.1);
   }
 }
-waitForItem("apple");
+waitForItem("Apple");
 </pre></code>`
 ]);
 
@@ -315,7 +315,7 @@ Bot skin can also be chosen.
 `<code><pre>
 for(var i = 0; i < 36; i++){
     setSkin(i);
-    say("skin " + i);
+    say("Skin " + i);
 }
 </pre></code>`
 ]);
@@ -354,9 +354,9 @@ function dropAll(itemName) {
         drop(itemName);
     }
 }
-if(bagItemsCount("water") > 0){
-  moveTo("tree");
-  dropAll("water");
+if(bagItemsCount("Water") > 0){
+  moveTo("Tree");
+  dropAll("Water");
 }
 </pre></code>`,
 ]);
@@ -391,21 +391,40 @@ Both methods accepts an <code>itemName</code> as last argument:
 </p>
 `,
 `<code><pre>
-var waterCount = getPlaceItemsCount("tree", "water");
+var waterCount = getPlaceItemsCount("Tree", "Water");
 say("Water crafted on the tree: " + waterCount);
-if(placeHasItem("tree")) {
+if(placeHasItem("Tree")) {
     say("There is items on the tree");
 }
-if(placeHasItem("tree", "apple")) {
+if(placeHasItem("Tree", "Apple")) {
     say("There is apple on the tree");
 }
 if(placeHasItem(0, 3)) {
     say("There is items at coordonate (0,3)");
 }
-if(placeHasItem(0, 3, "apple")) {
+if(placeHasItem(0, 3, "Apple")) {
     say("There is apple at coordonate (0,3)");
 }  
-</pre></code>`
+</pre></code>`,
+`<p>
+<code>getAMissingIngredient()</code> let you know what is missing for a bot to craft at a particula place. 
+The method returns <code>null</code> when the bot can craft at target place.
+Otherwhise, the method returns the name of one of the missing items. 
+</p>`,
+`<code><pre>
+moveTo("Tree");
+var missing = getAMissingIngredient();
+say("Need: " + missing);
+moveTo("Well");
+missing = getAMissingIngredient("Tree");
+say("Tree need: " + missing);
+craft();
+take("Water")
+missing = getAMissingIngredient("Tree");
+if(missing == null){
+  say("I can craft an apple if I go the the tree");
+}
+</pre></code>`,
 ]);
 
 addPage("Storeroom", [
@@ -428,14 +447,14 @@ You may change the display of the storeroom, and even make invisible ones.
 `<code><pre>
 if(getId() == 1){
    clearAllStorerooms();
-   createStoreroom("defaultIcon", 1, 4);
+   createStoreroom("DefaultIcon", 1, 4);
    createStoreroom("sameThanDefaultIcon", 2, 4, 0);
-   createStoreroom("chest", 3, 4, 1);
-   createStoreroom("oldChest", 4, 4, 2);
-   createStoreroom("invisible", 5, 4, -1);
+   createStoreroom("Chest", 3, 4, 1);
+   createStoreroom("OldChest", 4, 4, 2);
+   createStoreroom("Invisible", 5, 4, -1);
    
 }
-moveTo("invisible");
+moveTo("Invisible");
 </pre></code>`
 ]);
 
@@ -448,33 +467,29 @@ moveTo("invisible");
 
 
 
-
-
-
-
 addPage('Credits', [
-    `
-    <p>
-    Thanks to Shikashipx and 0x72 and Pipoya for theirs CCA/MIT work on the assets:
-    </p>
-    <p>
-    <a href="https://0x72.itch.io/dungeontileset-ii">dungeontileset-ii</a><br/>
-    <a href="https://shikashipx.itch.io/shikashis-fantasy-icons-pack">shikashis-fantasy-icons-pack</a><br/>
-    <a href="https://pipoya.itch.io/pipoya-free-rpg-world-tileset-32x32-40x40-48x48">pipoya-free-rpg-world</a>
-    </p>
-    <p>
-    Libs:
-    </p>
-    <p>
-    <a href="https://github.com/NeilFraser/JS-Interpreter">JS-Interpreter</a>: A sandboxed JavaScript interpreter in JavaScript. Execute arbitrary ES5 JavaScript code.
-    </p>
-    
-    <p>
-    Code source and bugs report can found on:
-    </p>
-    <p>
-    <a href="https://github.com/OlivierDeRivoyre/HealGame">github</a>
-    </p>
-    `
-    ]);
+`
+<p>
+Thanks to Shikashipx and 0x72 and Pipoya for theirs CCA/MIT work on the assets:
+</p>
+<p>
+<a href="https://0x72.itch.io/dungeontileset-ii">dungeontileset-ii</a>: cool characters sprites.<br/>
+<a href="https://shikashipx.itch.io/shikashis-fantasy-icons-pack">shikashis-fantasy-icons-pack</a>: for the items.<br/>
+<a href="https://pipoya.itch.io/pipoya-free-rpg-world-tileset-32x32-40x40-48x48">pipoya-free-rpg-world</a>: for the map.
+</p>
+<p>
+Lib to run the bot scripts:
+</p>
+<p>
+<a href="https://github.com/NeilFraser/JS-Interpreter">JS-Interpreter</a>: 
+A sandboxed JavaScript interpreter in JavaScript. Execute arbitrary ES5 JavaScript code.
+</p>
+<p>
+Code source can found on:
+</p>
+<p>
+<a href="https://github.com/OlivierDeRivoyre/HealGame">github</a>
+</p>
+`
+]);
     
