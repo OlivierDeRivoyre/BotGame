@@ -1270,7 +1270,7 @@ class Map {
         } else if (a.toFixed && b.toFixed) {
             const i = Math.max(0, Math.min(Math.floor(a), Map.MaxX - 1));
             const j = Math.max(0, Math.min(Math.floor(b), Map.MaxY - 1));
-            return getCellTarget({ i, j });
+            return this.getCellTarget({ i, j });
         }
         return null;
     }
