@@ -21,9 +21,9 @@ const pipoGroundTileSet = loadImg("pipo-map001_at");
 let desertBg = document.createElement("canvas");
 desertBg.width = 48;
 desertBg.height = 48;
-pipoGroundTileSet.onload = function(){
+pipoGroundTileSet.onload = function () {
     const desertCtx = desertBg.getContext("2d");
-    desertCtx.drawImage(pipoGroundTileSet, 
+    desertCtx.drawImage(pipoGroundTileSet,
         672, 336, 48, 48,
         0, 0, 48, 48
     );
@@ -120,7 +120,7 @@ class PipoGoundTiles {
             [{ i: 7, j: 1 }, { i: 6, j: 1 }, { i: 5, j: 1 }],
             [{ i: 4, j: 4 }, { i: 6, j: 0 }, { i: 5, j: 4 }],
         ];
-      
+
     }
     paint(i, j, x, y) {
         const subCell = this.outsideRelative[j][i];
@@ -130,7 +130,7 @@ class PipoGoundTiles {
             sourceX, sourceY, 48, 48,
             x, y, 48, 48
         )
-    }    
+    }
 }
 
 const waterTiles = new PipoGoundTiles(5, "water");
@@ -1039,12 +1039,15 @@ class Mission {
         return Math.floor(count * mult);
     }
     getClothCurve(lvl) {
-        const range = [1, 2, 3, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 80, 100];
+        const range = [1, 2, 3, 4, 5, 6, 7, 8, 9,
+            10, 11, 12, 13, 14, 15, 16, 17, 18, 20,
+            22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48,
+            50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100];
         let i = lvl - 1;
         if (i < range.length) {
             return range[i];
         }
-        return 100 + 25 * (1 + i - range.length);
+        return 100 + 10 * (1 + i - range.length);
     }
     getNewMax() {
         if (this.item.name == items.apple.name) {
@@ -1236,8 +1239,8 @@ class Map {
         } else {
             tiles.paintBorder(tile_i, tile_j, Map.BorderX + 48 * cell_i, Map.BorderY + 48 * cell_j);
         }
-    }    
-    paintDesert() {      
+    }
+    paintDesert() {
         let region = new Path2D();
         region.moveTo(13 * 48, 0);
         region.lineTo(CanvasWidth + 1, 0);
