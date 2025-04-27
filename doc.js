@@ -513,7 +513,10 @@ getPlaceItemsCount("Tree", "Water");
 placeHasItem("Tree", "Water");
 var missing = getAMissingIngredient("Tree");
 clearAllStorerooms();
-createStoreroom("MyStore", 3, 3)
+createStoreroom("MyStore", 3, 3);
+setGlobalValue("key", "value");
+var value = getGlobalValue("key");
+clearAllGlobalValues();
 </pre></code>`
 ]);
     

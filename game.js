@@ -167,7 +167,7 @@ function getDungeonTileSetSprite(index) {
 }
 
 const botSprites = [...Array(36).keys()].map(i => getDungeonTileSetSprite(i));
-
+let globalBotValues = [];
 class Bot {
     constructor(id, x, y) {
         this.id = id;
@@ -391,6 +391,27 @@ class Bot {
             interpreter.setProperty(globalObject, 'clearAllStorerooms', interpreter.createNativeFunction(
                 function clearAllStorerooms() {
                     map.clearAllStorerooms();
+                    self.currentAction = new WaitAnim(0.1);
+                }));
+            interpreter.setProperty(globalObject, 'setGlobalValue', interpreter.createNativeFunction(
+                function setGlobalValue(key, value) {
+                    if (key == null || !key.toLowerCase) {
+                        throw new Error('Missing argument on setGlobalValue()')
+                    }
+                    globalBotValues[key] = value;
+                    self.currentAction = new WaitAnim(0.1);
+                }));
+            interpreter.setProperty(globalObject, 'getGlobalValue', interpreter.createNativeFunction(
+                function getGlobalValue(key) {
+                    if (key == null || !key.toLowerCase) {
+                        throw new Error('Missing argument on getGlobalValue()')
+                    }
+                    self.currentAction = new WaitAnim(0.1);
+                    return globalBotValues[key];
+                }));
+            interpreter.setProperty(globalObject, 'clearAllGlobalValues', interpreter.createNativeFunction(
+                function clearAllGlobalValues() {
+                    globalBotValues = [];
                     self.currentAction = new WaitAnim(0.1);
                 }));
         }
