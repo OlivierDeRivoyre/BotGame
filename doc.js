@@ -282,23 +282,6 @@ setName(newName);
 </pre></code>`
 ]);
 
-
-addPage('tryTake()', [
-`<p>
-Advanced take that accept failure.
-<code>tryTake()</code> returns false if the bot fails to take an item. 
-</p>
-`,
-`<code><pre>
-function waitForItem(itemName) {
-  while(!tryTake(itemName)){
-    wait(0.1);
-  }
-}
-waitForItem("Apple");
-</pre></code>`
-]);
-
 addPage('Bot display', [
 `<p>
 Bot name can be changed.
@@ -379,6 +362,51 @@ var walkLevel = getWalkLevel();
 say("My walk level is: " + walkLevel);
 bonus = (10 + walkLevel) / 10;
 say("Walk speed bonus: x" + bonus.toFixed(2));
+</pre></code>`,
+]);
+
+
+addPage('Try actions', [
+`<p>
+<code>tryTake()</code> is an advanced take that accept failure.
+<code>tryTake()</code> returns false if the bot fails to take an item. 
+</p>
+`,
+`<code><pre>
+function waitForItem(itemName) {
+    while(!tryTake(itemName)){
+    wait(0.1);
+    }
+}
+waitForItem("Apple");
+</pre></code>`,
+`<p>
+<code>tryCraft()</code> returns false if the bot failed to craft.
+It return true in case of success.
+</p>
+`,
+`<code><pre>
+moveTo("Tree");
+if(!tryCraft()){
+  moveTo("Well");
+  craft();
+  take();
+  moveTo("Tree");
+  craft();
+}
+</pre></code>`,
+`<p>
+<code>craftOrGetAMissingIngredient()</code> returns null in case of success. 
+If the craft failed because an ingredient was missing, <code>craftOrGetAMissingIngredient()</code> returns the name
+of a missing ingredient.
+</p>
+`,
+`<code><pre>
+moveTo("Tree");
+var missing = craftOrGetAMissingIngredient();
+if(missing != null){
+  say("Missing to craft: " + missing)
+}
 </pre></code>`,
 ]);
 

@@ -71,7 +71,7 @@ class DoubleSprite {
         this.tHeight = tHeight || 48;
     }
     paint32(x, y, index, reverse) {
-        index |= 0; 
+        index |= 0;
         if (reverse) {
             this.paint32Reverse(x, y, index);
             return;
@@ -93,7 +93,7 @@ class DoubleSprite {
             0, 0, 32, 32
         );
         ctx.restore();
-    }    
+    }
 }
 
 class PipoGoundTiles {
@@ -298,6 +298,14 @@ class Bot {
                 function craft() {
                     self.craft();
                 }));
+            interpreter.setProperty(globalObject, 'tryCraft', interpreter.createNativeFunction(
+                function tryCraft() {
+                    self.tryCraft();
+                }));
+            interpreter.setProperty(globalObject, 'craftOrGetAMissingIngredient', interpreter.createNativeFunction(
+                function craftOrGetAMissingIngredient() {
+                    return self.craftOrGetAMissingIngredient();
+                }));
             interpreter.setProperty(globalObject, 'take', interpreter.createNativeFunction(
                 function take(itemName) {
                     self.take(itemName);
@@ -370,7 +378,7 @@ class Bot {
                 function getAMissingIngredient(cell_i, cell_j) {
                     self.currentAction = new WaitAnim(0.25);
                     return map.getAMissingIngredient(self, cell_i, cell_j);
-                }));                
+                }));
             interpreter.setProperty(globalObject, 'createStoreroom', interpreter.createNativeFunction(
                 function createStoreroom(name, i, j, spriteIndex) {
                     map.createStoreroom(name, i, j, spriteIndex);
@@ -427,21 +435,40 @@ class Bot {
     getCell() {
         return { i: Math.floor(this.x / 48), j: Math.floor(this.y / 48) };
     }
-    craft() {
+    internalCraftOrGetAMissingIngredient(){
         const cell = this.getCell();
         const building = map.getBuilding(cell);
         if (building == null || building.recipe == null) {
             this.sayAndWait("No craft building here", "red", 5);
             return;
-        }
-        if (!building.recipe.hasItems(this)) {
-            this.sayAndWait("Missing ingredients to craft", "red", 5);
-            return;
+        }        
+        const missingIngredient = building.recipe.getAMissingIngredient(this, cell)
+        if (missingIngredient != null) {            
+            return missingIngredient;
         }
         building.recipe.consumeIngredients(this);
         this.currentAction = new CraftAnim(this, building.recipe);
         this.craftXp++;
         this.onXpGained();
+    }
+    craft() {
+        const missing = this.internalCraftOrGetAMissingIngredient()       
+        if (missing != null) {
+            this.sayAndWait("Missing ingredients to craft", "red", 5);            
+        }        
+    }
+    tryCraft(){
+        const missing = this.internalCraftOrGetAMissingIngredient();
+        if (missing != null) {
+            this.currentAction = new WaitAnim(0.1);
+        }
+    }
+    craftOrGetAMissingIngredient(){
+        const missing = this.internalCraftOrGetAMissingIngredient();
+        if (missing != null) {
+            this.currentAction = new WaitAnim(0.1);
+        }
+        return missing;
     }
     countItems(item) {
         return this.bag.filter(b => b.name === item.name).length;
@@ -761,7 +788,7 @@ class Recipe {
         const onMap = map.countItems(cell, item);
         return onBot + onMap;
     }
-    getAMissingIngredient(bot, cell){
+    getAMissingIngredient(bot, cell) {
         for (let ingredient of this.inputs) {
             if (this.countItems(ingredient.item, bot, cell) < ingredient.count) {
                 return ingredient.item.name;
@@ -770,7 +797,7 @@ class Recipe {
         return null;
     }
     hasItems(bot) {
-        const cell = bot.getCell();        
+        const cell = bot.getCell();
         return this.getAMissingIngredient(bot, cell) == null;
     }
     consumeIngredients(bot) {
@@ -1213,7 +1240,7 @@ class Map {
         }
         return null;
     }
-    getCellTarget(cell){
+    getCellTarget(cell) {
         for (let building of this.buildingTiles) {
             if (building.cell.i == cell.i && building.cell.j == cell.j) {
                 return { building, cell: cell };
@@ -1243,20 +1270,20 @@ class Map {
         } else if (a.toFixed && b.toFixed) {
             const i = Math.max(0, Math.min(Math.floor(a), Map.MaxX - 1));
             const j = Math.max(0, Math.min(Math.floor(b), Map.MaxY - 1));
-            return getCellTarget({i, j});
+            return getCellTarget({ i, j });
         }
         return null;
     }
-    getAMissingIngredient(bot, a, b){
+    getAMissingIngredient(bot, a, b) {
         const target = (a === undefined) ? this.getCellTarget(bot.getCell()) : this.getTarget(a, b);
-        if(target == null){
-            throw new Error(`getAMissingIngredient(${a|''} ${b|''}): no place found`);
+        if (target == null) {
+            throw new Error(`getAMissingIngredient(${a | ''} ${b | ''}): no place found`);
         }
-        if(target.building == null){
-            throw new Error(`getAMissingIngredient(${a|''} ${b|''}): no craft station here`);
+        if (target.building == null) {
+            throw new Error(`getAMissingIngredient(${a | ''} ${b | ''}): no craft station here`);
         }
-        if(target.building.recipe == null){
-            throw new Error(`getAMissingIngredient(${a|''} ${b|''}): no craft recipe here`);
+        if (target.building.recipe == null) {
+            throw new Error(`getAMissingIngredient(${a | ''} ${b | ''}): no craft recipe here`);
         }
         const recipe = target.building.recipe;
         return recipe.getAMissingIngredient(bot, target.cell);
@@ -1505,7 +1532,7 @@ class EndGameDialog {
         sec = sec.toLocaleString(undefined, { minimumIntegerDigits: 2 });
         milli = milli.toLocaleString(undefined, { minimumIntegerDigits: 3 });
         this.timePlayed = `${hour}:${min}:${sec}.${milli}`
-        this.window ={ x: 100, y: 100, width: CanvasWidth - 200, height: CanvasHeight - 200};
+        this.window = { x: 100, y: 100, width: CanvasWidth - 200, height: CanvasHeight - 200 };
         this.button = { x: 390, y: 280, width: 280, height: 48, label: "Keep playing" };
     }
     update() { }
