@@ -18,6 +18,16 @@ const dungeonTileSet = loadImg("0x72_DungeonTilesetII_v1.7x2");
 const shikashiTileSet = loadImg("Shikashi");
 const pipoBuildingTileSet = loadImg("pipo-map001");
 const pipoGroundTileSet = loadImg("pipo-map001_at");
+let desertBg = document.createElement("canvas");
+desertBg.width = 48;
+desertBg.height = 48;
+pipoGroundTileSet.onload = function(){
+    const desertCtx = desertBg.getContext("2d");
+    desertCtx.drawImage(pipoGroundTileSet, 
+        672, 336, 48, 48,
+        0, 0, 48, 48
+    );
+};
 
 function getShikashiTile(i, j) {
     return new Sprite(shikashiTileSet, i * 32, j * 32, 32, 32);
@@ -105,22 +115,24 @@ class PipoGoundTiles {
         this.map_j = Math.floor(index / 2);
         this.topX = this.map_i * 48 * 8;
         this.topY = this.map_j * 48 * 6;
-        this.relative = [
+        this.outsideRelative = [
             [{ i: 4, j: 3 }, { i: 6, j: 2 }, { i: 5, j: 3 }],
             [{ i: 7, j: 1 }, { i: 6, j: 1 }, { i: 5, j: 1 }],
             [{ i: 4, j: 4 }, { i: 6, j: 0 }, { i: 5, j: 4 }],
-        ]
+        ];
+      
     }
     paint(i, j, x, y) {
-        const subCell = this.relative[j][i];
+        const subCell = this.outsideRelative[j][i];
         const sourceX = this.topX + subCell.i * 48;
         const sourceY = this.topY + subCell.j * 48;
         ctx.drawImage(this.tile,
             sourceX, sourceY, 48, 48,
             x, y, 48, 48
         )
-    }
+    }    
 }
+
 const waterTiles = new PipoGoundTiles(5, "water");
 
 const tickDuration = 1000.0 / 30;
@@ -1050,7 +1062,7 @@ class HeadquartersBigSprite {
     paintNoScale(x, y) {
         this.sprite.paintNoScale(x - this.offSetX, y - this.offSetY);
     }
-    paint32(x, y){
+    paint32(x, y) {
         this.sprite.paint32(x, y);
     }
 }
@@ -1203,21 +1215,7 @@ class Map {
         this.storerooms = [];
     }
     paint() {
-        waterTiles.paint(0, 0, Map.BorderX - 48, Map.BorderY - 48);
-        waterTiles.paint(2, 0, Map.BorderX + 48 * Map.MaxX, Map.BorderY - 48);
-        waterTiles.paint(0, 2, Map.BorderX - 48, Map.BorderY + Map.MaxY * 48);
-        waterTiles.paint(2, 2, Map.BorderX + 48 * Map.MaxX, Map.BorderY + Map.MaxY * 48);
-        for (let j = 0; j < Map.MaxY; j++) {
-            waterTiles.paint(0, 1, Map.BorderX - 48, Map.BorderY + j * 48)
-            waterTiles.paint(2, 1, Map.BorderX + 48 * Map.MaxX, Map.BorderY + j * 48)
-        }
-        for (let i = 0; i < Map.MaxX; i++) {
-            waterTiles.paint(1, 0, Map.BorderX + i * 48, Map.BorderY - 48);
-            for (let j = 0; j < Map.MaxY; j++) {
-                greenGroundSprite.paintNoScale(Map.BorderX + i * 48, Map.BorderY + j * 48)
-            }
-            waterTiles.paint(1, 2, Map.BorderX + i * 48, Map.BorderY + Map.MaxY * 48)
-        }
+        this.paintBackground();
         for (let tile of this.storerooms) {
             tile.paint();
         }
@@ -1228,6 +1226,48 @@ class Map {
             s.paint();
         }
         headquarters.paint();
+    }
+    paintWaterCell(tile_i, tile_j, cell_i, cell_j) {
+        waterTiles.paint(tile_i, tile_j, Map.BorderX + 48 * cell_i, Map.BorderY + 48 * cell_j);
+    }
+    paintTileCell(tiles, tile_i, tile_j, cell_i, cell_j, inside) {
+        if (inside) {
+            tiles.paint(tile_i, tile_j, Map.BorderX + 48 * cell_i, Map.BorderY + 48 * cell_j);
+        } else {
+            tiles.paintBorder(tile_i, tile_j, Map.BorderX + 48 * cell_i, Map.BorderY + 48 * cell_j);
+        }
+    }    
+    paintDesert() {      
+        let region = new Path2D();
+        region.moveTo(13 * 48, 0);
+        region.lineTo(CanvasWidth + 1, 0);
+        region.lineTo(CanvasWidth + 1, 3 * 48);
+        region.lineTo(13.5 * 48, 3 * 48);
+        region.bezierCurveTo(13.5 * 48, 3 * 48, 13.10 * 48, 2.90 * 48, 13 * 48, 2.5 * 48);
+        region.lineTo(13 * 48, 0);
+        region.closePath();
+        ctx.fillStyle = ctx.createPattern(desertBg, "repeat");
+        ctx.fill(region);
+    }
+    paintBackground() {
+        for (let i = -1; i < Map.MaxX + 1; i++) {
+            for (let j = -1; j < Map.MaxY + 1; j++) {
+                greenGroundSprite.paintNoScale(Map.BorderX + i * 48, Map.BorderY + j * 48)
+            }
+        }
+        this.paintDesert();
+        this.paintWaterCell(0, 0, -1, -1);
+        this.paintWaterCell(2, 0, Map.MaxX, -1);
+        this.paintWaterCell(0, 2, -1, Map.MaxY);
+        this.paintWaterCell(2, 2, Map.MaxX, Map.MaxY);
+        for (let j = 0; j < Map.MaxY; j++) {
+            this.paintWaterCell(0, 1, -1, j)
+            this.paintWaterCell(2, 1, Map.MaxX, j)
+        }
+        for (let i = 0; i < Map.MaxX; i++) {
+            this.paintWaterCell(1, 0, i, -1);
+            this.paintWaterCell(1, 2, i, Map.MaxY)
+        }
     }
     getCoord(cell) {
         const x = Map.BorderX + cell.i * 48;
