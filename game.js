@@ -1636,8 +1636,8 @@ class EndGameDialog {
         ctx.font = "36px Verdana";
         ctx.fillText("Victory!", this.window.x + 200, this.window.y + 50);
         ctx.fillStyle = "black";
-        ctx.font = "24px Verdana";
-        ctx.fillText(`You ended the game in ${this.timePlayed}`, this.window.x + 50, this.window.y + 120);
+        ctx.font = "22px Verdana";
+        ctx.fillText(`You ended the game in ${this.timePlayed} (CPU ticks)`, this.window.x + 25, this.window.y + 120);
         this.paintButton();
     }
     paintButton() {
@@ -1662,7 +1662,7 @@ let dialog = null;
 function showEndGameScreen() {
     dialog = new EndGameDialog(tickNumber);
 }
-//dialog = new EndGameDialog(1000000);
+dialog = new EndGameDialog(1000000);
 //headquarters.missions[1].lvl = 100;
 //map.addItemOnGround({ i: 0, j: 3 }, items.cloth);
 //map.addItemOnGround({ i: 0, j: 3 }, items.water);
