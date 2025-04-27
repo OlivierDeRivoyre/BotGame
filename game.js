@@ -1662,7 +1662,7 @@ let dialog = null;
 function showEndGameScreen() {
     dialog = new EndGameDialog(tickNumber);
 }
-dialog = new EndGameDialog(1000000);
+//dialog = new EndGameDialog(1000000);
 //headquarters.missions[1].lvl = 100;
 //map.addItemOnGround({ i: 0, j: 3 }, items.cloth);
 //map.addItemOnGround({ i: 0, j: 3 }, items.water);
