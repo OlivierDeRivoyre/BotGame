@@ -22,7 +22,7 @@ while(true){
 
 Fulfill an objective give you a new bot. 
 
-Web site:
+Web site where you can play:
 https://olivierderivoyre.github.io/BotGame/
 
 Libs:
