@@ -1050,6 +1050,9 @@ class HeadquartersBigSprite {
     paintNoScale(x, y) {
         this.sprite.paintNoScale(x - this.offSetX, y - this.offSetY);
     }
+    paint32(x, y){
+        this.sprite.paint32(x, y);
+    }
 }
 class Headquarters {
     constructor() {
@@ -1071,6 +1074,8 @@ class Headquarters {
             new HeadquartersBigSprite(3, 11, 3, 3),
         ];
         this.sprite = this.sprites[0];
+        //TEMP
+        this.sprite = this.sprites[12];
         this.missions = [
             new Mission(items.apple, () => this.missionEnded()),
             new Mission(items.cloth, () => this.missionEnded()),
