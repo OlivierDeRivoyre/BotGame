@@ -1074,8 +1074,6 @@ class Headquarters {
             new HeadquartersBigSprite(3, 11, 3, 3),
         ];
         this.sprite = this.sprites[0];
-        //TEMP
-        this.sprite = this.sprites[12];
         this.missions = [
             new Mission(items.apple, () => this.missionEnded()),
             new Mission(items.cloth, () => this.missionEnded()),
