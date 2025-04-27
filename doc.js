@@ -509,6 +509,7 @@ getWalkLevel();
 bagHasSpace();
 getBagItemsCount("Water");
 bagHasItem();
+bagIsEmpty();
 getPlaceItemsCount("Tree", "Water");
 placeHasItem("Tree", "Water");
 var missing = getAMissingIngredient("Tree");

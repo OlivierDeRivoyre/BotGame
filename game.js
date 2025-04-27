@@ -252,8 +252,8 @@ class Bot {
         for (let i = 0; i < this.bag.length; i++) {
             this.bag[i].paintSmallWithCount(this.x + 16 * i, this.y + 20, 1);
         }
-        ctx.font = "10px Georgia";
-        ctx.fillStyle = (this === selectedBot) ? "#efe" : "#eee";
+        ctx.font = "11px Georgia";
+        ctx.fillStyle = (this === tooltip.selection) ? "yellow" : "#eee";
         ctx.fillText(this.name, this.x + 8, this.y + this.sprite.tHeight - 8);
     }
     paintTooltip(tooltip) {
@@ -368,7 +368,7 @@ class Bot {
                 }));
             interpreter.setProperty(globalObject, 'bagHasSpace', interpreter.createNativeFunction(
                 function bagHasSpace() {
-                    return self.bagSize - self.bag.length;
+                    return self.bagSize - self.bag.length > 0;
                 }));
             interpreter.setProperty(globalObject, 'getBagItemsCount', interpreter.createNativeFunction(
                 function getBagItemsCount(itemName) {
@@ -377,6 +377,10 @@ class Bot {
             interpreter.setProperty(globalObject, 'bagHasItem', interpreter.createNativeFunction(
                 function bagHasItem(itemName) {
                     return self.bagItemsCount(itemName) > 0;
+                }));
+            interpreter.setProperty(globalObject, 'bagIsEmpty', interpreter.createNativeFunction(
+                function bagIsEmpty() {
+                    return self.bag.length == 0;
                 }));
             interpreter.setProperty(globalObject, 'bagHasItems', interpreter.createNativeFunction(
                 function bagHasItems(itemName) {
@@ -611,9 +615,10 @@ class Bot {
     setNextLevelXp() {
         this.craftXp = 0;
         this.walkXp = 0;
-        const xp = [100, 100, 100, 120, 150, 200, 250, 300, 400, 500];
-        this.nextCraftLevelXp = xp[Math.min(this.craftLevel, xp.length - 1)];
-        this.nextWalkLevelXp = xp[Math.min(this.walkLevel, xp.length - 1)];
+        const walkXp = [100, 100, 100, 120, 140, 160, 180, 200, 250, 300];
+        const craftXp = [50, 50, 50, 60, 80, 100, 120, 150, 200, 300];
+        this.nextCraftLevelXp = walkXp[Math.min(this.craftLevel, walkXp.length - 1)];
+        this.nextWalkLevelXp = craftXp[Math.min(this.walkLevel, craftXp.length - 1)];
     }
     isInside(event) {
         return event.offsetX >= this.x && event.offsetX < this.x + this.sprite.tWidth
