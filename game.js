@@ -261,7 +261,7 @@ class Bot {
 
         ctx.fillStyle = "white";
         ctx.font = "12px Verdana";
-        ctx.fillText(`Bag size: 2`, cursorX, cursorY);
+        ctx.fillText(`Bag size: ${this.bagSize}`, cursorX, cursorY);
         cursorY += 18;
 
         ctx.fillStyle = "white";
@@ -366,6 +366,10 @@ class Bot {
                 function bagHasItem(itemName) {
                     return self.bagItemsCount(itemName) > 0;
                 }));
+            interpreter.setProperty(globalObject, 'bagHasItems', interpreter.createNativeFunction(
+                function bagHasItems(itemName) {
+                    return self.bagItemsCount(itemName) > 0;
+                }));
             interpreter.setProperty(globalObject, 'getPlaceItemsCount', interpreter.createNativeFunction(
                 function getPlaceItemsCount(arg1, arg2, arg3) {
                     return self.placeItemsCount(arg1, arg2, arg3);
@@ -435,15 +439,15 @@ class Bot {
     getCell() {
         return { i: Math.floor(this.x / 48), j: Math.floor(this.y / 48) };
     }
-    internalCraftOrGetAMissingIngredient(){
+    internalCraftOrGetAMissingIngredient() {
         const cell = this.getCell();
         const building = map.getBuilding(cell);
         if (building == null || building.recipe == null) {
             this.sayAndWait("No craft building here", "red", 5);
             return;
-        }        
+        }
         const missingIngredient = building.recipe.getAMissingIngredient(this, cell)
-        if (missingIngredient != null) {            
+        if (missingIngredient != null) {
             return missingIngredient;
         }
         building.recipe.consumeIngredients(this);
@@ -452,18 +456,18 @@ class Bot {
         this.onXpGained();
     }
     craft() {
-        const missing = this.internalCraftOrGetAMissingIngredient()       
+        const missing = this.internalCraftOrGetAMissingIngredient()
         if (missing != null) {
-            this.sayAndWait("Missing ingredients to craft", "red", 5);            
-        }        
+            this.sayAndWait("Missing ingredients to craft", "red", 5);
+        }
     }
-    tryCraft(){
+    tryCraft() {
         const missing = this.internalCraftOrGetAMissingIngredient();
         if (missing != null) {
             this.currentAction = new WaitAnim(0.1);
         }
     }
-    craftOrGetAMissingIngredient(){
+    craftOrGetAMissingIngredient() {
         const missing = this.internalCraftOrGetAMissingIngredient();
         if (missing != null) {
             this.currentAction = new WaitAnim(0.1);
@@ -557,9 +561,9 @@ class Bot {
             this.walkLevel = Math.min(this.walkLevel + 1, 10);
             if (this.walkLevel >= 10) {
                 this.bagSize = 5;
-            } else if (this.walkLevel > 8) {
+            } else if (this.walkLevel >= 8) {
                 this.bagSize = 4;
-            } else if (this.walkLevel > 5) {
+            } else if (this.walkLevel >= 5) {
                 this.bagSize = 3;
             }
             this.setNextLevelXp();
@@ -985,7 +989,23 @@ class Mission {
             this.onSuccessFunc();
         }
     }
-    getSlowCurve(lvl) {
+    getAppleCurve(lvl) {
+        let count = this.lvl * this.lvl;
+        let mult = 1;
+        if (lvl < 5) {
+            mult = 2;
+        } else if (lvl < 10) {
+            mult = 3;
+        } else if (lvl < 15) {
+            mult = 5;
+        } else if (lvl < 20) {
+            mult = 10;
+        } else {
+            mult = 20;
+        }
+        return Math.floor(count * mult);
+    }
+    getClothCurve(lvl) {
         const range = [1, 2, 3, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 80, 100];
         let i = lvl - 1;
         if (i < range.length) {
@@ -995,9 +1015,9 @@ class Mission {
     }
     getNewMax() {
         if (this.item.name == items.apple.name) {
-            return 2 * this.lvl * this.lvl;
+            return this.getAppleCurve(this.lvl);
         }
-        return this.getSlowCurve(this.lvl);
+        return this.getClothCurve(this.lvl);
     }
 }
 class HeadquartersBigSprite {

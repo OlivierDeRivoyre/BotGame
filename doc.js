@@ -195,6 +195,7 @@ take("Apple");
 take("Sand");
 take("Flask");
 take("IronOre");
+take("Powder")
 take("Ink");
 take("Coton");
 take("Spool");
@@ -227,6 +228,7 @@ drop("Apple");
 drop("Sand");
 drop("Flask");
 drop("IronOre");
+drop("Powder");
 drop("Ink");
 drop("Coton");
 drop("Spool");
@@ -324,12 +326,12 @@ moveTo("well");
 craftUntilBagIsFull();
 </pre></code>`,
 `<p>
-<code>bagItemsCount()</code> returns the number of items in the bag. 
-It accepts an argument to filter by item type: <code>bagItemsCount("apple")</code>
+<code>getBagItemsCount()</code> returns the number of items in the bag. 
+It accepts an argument to filter by item type: <code>getBagItemsCount("apple")</code>
 </p>`,
 `<p>
-<code>bagHasItems()</code> returns true if there is at least one item in the bag. 
-It accepts an argument to filter by item type: <code>bagHasItems("apple")</code>
+<code>bagHasItem()</code> returns true if there is at least one item in the bag. 
+It accepts an argument to filter by item type: <code>bagHasItem("apple")</code>
 </p>`,
 `<code><pre>
 function dropAll(itemName) {
@@ -337,7 +339,7 @@ function dropAll(itemName) {
         drop(itemName);
     }
 }
-if(bagItemsCount("Water") > 0){
+if(getBagItemsCount("Water") > 0){
   moveTo("Tree");
   dropAll("Water");
 }
@@ -485,7 +487,36 @@ if(getId() == 1){
 moveTo("Invisible");
 </pre></code>`
 ]);
-
+addPage("All functions", [
+`<code><pre>
+moveTo("Well");
+say("Hello");
+wait(2);
+craft();
+tryCraft();
+var missing = craftOrGetAMissingIngredient();
+take("Water");
+tryTake("Water");
+drop("Water");
+getId();
+getName();
+setName("Alice");
+setSkin(11);
+getBotsCount();
+getBagSize();
+getCraftLevel();
+getWalkLevel();
+bagHasSpace();
+getBagItemsCount("Water");
+bagHasItem();
+getPlaceItemsCount("Tree", "Water");
+placeHasItem("Tree", "Water");
+var missing = getAMissingIngredient("Tree");
+clearAllStorerooms();
+createStoreroom("MyStore", 3, 3)
+</pre></code>`
+]);
+    
 
 
 
