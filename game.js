@@ -288,11 +288,11 @@ class Bot {
             interpreter.setProperty(globalObject, 'say', interpreter.createNativeFunction(
                 function say(msg) {
                     const duration = 1.5;
-                    self.sayAndWait(msg, 'black', duration);
+                    self.sayAndWait(msg, 'yellow', duration);
                 }));
             interpreter.setProperty(globalObject, 'wait', interpreter.createNativeFunction(
                 function wait(duration) {
-                    self.sayAndWait(`waiting ${duration} sec`, 'black', duration || 0.01);
+                    self.sayAndWait(`waiting ${duration} sec`, 'gray', duration || 0.01);
                 }));
             interpreter.setProperty(globalObject, 'craft', interpreter.createNativeFunction(
                 function craft() {
@@ -412,7 +412,7 @@ class Bot {
         const speed = 3 * this.getWalkSpeedBonus();
         this.currentAction = new MoveToAnim(this, target.cell.i, target.cell.j, speed);
         const targetName = target.building != null ? target.building.name : `(${cell_i}, ${cell_j})`;
-        this.say(`Going to ${targetName}`, 'yellow', 1);
+        this.say(`Going to ${targetName}`, 'gray', 1);
         const current = this.getCell();
         this.lookLeft = current.i > target.cell.i;
         this.walkXp += Math.min(Math.abs(target.cell.i - current.i), Math.abs(target.cell.j - current.j));
