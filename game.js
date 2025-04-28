@@ -170,6 +170,7 @@ function getDungeonTileSetSprite(index) {
 
 const botSprites = [...Array(36).keys()].map(i => getDungeonTileSetSprite(i));
 let globalBotValues = [];
+let globalQueues = [];
 class Bot {
     constructor(id, x, y) {
         this.id = id;
@@ -399,6 +400,10 @@ class Bot {
                     map.clearAllStorerooms();
                     self.currentAction = new WaitAnim(0.1);
                 }));
+            interpreter.setProperty(globalObject, 'getTickCount', interpreter.createNativeFunction(
+                function getTickCount() {
+                    return tickNumber;
+                }));
             interpreter.setProperty(globalObject, 'setGlobalValue', interpreter.createNativeFunction(
                 function setGlobalValue(key, value) {
                     if (key == null || !key.toLowerCase) {
@@ -415,9 +420,43 @@ class Bot {
                     self.currentAction = new WaitAnim(0.1);
                     return globalBotValues[key];
                 }));
+            interpreter.setProperty(globalObject, 'globalQueuePush', interpreter.createNativeFunction(
+                function globalQueuePush(topic, value) {
+                    if (topic == null || !topic.toLowerCase) {
+                        throw new Error('Missing argument on globalQueuePush()')
+                    }
+                    if (!globalQueues[topic]) {
+                        globalQueues[topic] = [value];
+                    } else {
+                        globalQueues[topic].push(value);
+                    }
+                    const duration = globalQueues[topic].length < 100 
+                        && Object.keys(globalQueues).length < 100 
+                        ? 0.2 : 3;
+                    self.currentAction = new WaitAnim(duration);
+                    if (globalQueues[topic].length > 200) {
+                        globalQueues[topic].splice(0, 50);
+                    }
+                }));
+            interpreter.setProperty(globalObject, 'globalQueueTryPop', interpreter.createNativeFunction(
+                function globalQueueTryPop(topic) {
+                    if (topic == null || !topic.toLowerCase) {
+                        throw new Error('Missing argument on globalQueueTryPop()')
+                    }
+                    self.currentAction = new WaitAnim(0.1);
+                    if (!globalQueues[topic] || globalQueues[topic].length == 0) {
+                        return null;
+                    } else {
+                        const value = globalQueues[topic][0];
+                        globalQueues[topic].splice(0, 1);
+
+                        return value;
+                    }
+                }));
             interpreter.setProperty(globalObject, 'clearAllGlobalValues', interpreter.createNativeFunction(
                 function clearAllGlobalValues() {
                     globalBotValues = [];
+                    globalQueues = [];
                     self.currentAction = new WaitAnim(0.1);
                 }));
         }
@@ -679,7 +718,19 @@ class CraftAnim {
         }
     }
 }
-const bots = [new Bot(1, 200, 200)];
+function createStartingBots(){
+    const params = new URLSearchParams(window.location.search);
+    const cheating = params.get("cheat");
+    if(cheating){
+        let b = [];
+        for(let i = 1; i <= cheating; i++){
+            b.push(new Bot(i, 48 * (i % 15), 48 * Math.floor(i / 15) ));            
+        }
+        return b;
+    }
+    return [new Bot(1, 200, 200)];
+}
+const bots = createStartingBots();
 
 class Item {
     constructor(rank, name, sprite) {
