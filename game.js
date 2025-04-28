@@ -493,7 +493,7 @@ class Bot {
         }
         const current = this.getCell();
         this.lookLeft = current.i > target.cell.i;
-        this.walkXp += Math.min(Math.abs(target.cell.i - current.i), Math.abs(target.cell.j - current.j));
+        this.walkXp += Math.max(Math.abs(target.cell.i - current.i), Math.abs(target.cell.j - current.j));
         this.onXpGained();
     }    
     sayAndWait(msg, color, duration) {
