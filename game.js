@@ -656,10 +656,10 @@ class Bot {
     setNextLevelXp() {
         this.craftXp = 0;
         this.walkXp = 0;
-        const walkXp = [100, 100, 100, 120, 140, 160, 180, 200, 250, 300];
         const craftXp = [50, 50, 50, 60, 80, 100, 120, 150, 200, 300];
-        this.nextCraftLevelXp = walkXp[Math.min(this.craftLevel, walkXp.length - 1)];
-        this.nextWalkLevelXp = craftXp[Math.min(this.walkLevel, craftXp.length - 1)];
+        const walkXp = [100, 100, 100, 120, 140, 160, 180, 200, 250, 300];
+        this.nextCraftLevelXp = craftXp[Math.min(this.craftLevel, walkXp.length - 1)];
+        this.nextWalkLevelXp = walkXp[Math.min(this.walkLevel, craftXp.length - 1)];
     }
     isInside(event) {
         return event.offsetX >= this.x && event.offsetX < this.x + this.sprite.tWidth
