@@ -18,16 +18,6 @@ const dungeonTileSet = loadImg("0x72_DungeonTilesetII_v1.7x2");
 const shikashiTileSet = loadImg("Shikashi");
 const pipoBuildingTileSet = loadImg("pipo-map001");
 const pipoGroundTileSet = loadImg("pipo-map001_at");
-let desertBg = document.createElement("canvas");
-desertBg.width = 48;
-desertBg.height = 48;
-pipoGroundTileSet.onload = function () {
-    const desertCtx = desertBg.getContext("2d");
-    desertCtx.drawImage(pipoGroundTileSet,
-        672, 336, 48, 48,
-        0, 0, 48, 48
-    );
-};
 
 function getShikashiTile(i, j) {
     return new Sprite(shikashiTileSet, i * 32, j * 32, 32, 32);
@@ -1246,16 +1236,12 @@ class Map {
         }
     }
     paintDesert() {
-        let region = new Path2D();
-        region.moveTo(13 * 48, 0);
-        region.lineTo(CanvasWidth + 1, 0);
-        region.lineTo(CanvasWidth + 1, 3 * 48);
-        region.lineTo(13.5 * 48, 3 * 48);
-        region.bezierCurveTo(13.5 * 48, 3 * 48, 13.10 * 48, 2.90 * 48, 13 * 48, 2.5 * 48);
-        region.lineTo(13 * 48, 0);
-        region.closePath();
-        ctx.fillStyle = ctx.createPattern(desertBg, "repeat");
-        ctx.fill(region);
+        ctx.drawImage(pipoGroundTileSet,
+            624, 320,
+            104, 104,
+            14.5 * 48, 0,
+            104, 104
+        )
     }
     paintBackground() {
         for (let i = -1; i < Map.MaxX + 1; i++) {
