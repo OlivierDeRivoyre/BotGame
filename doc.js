@@ -502,6 +502,7 @@ getId();
 getName();
 setName("Alice");
 setSkin(23);
+setWorkInSilence(true);
 getBotsCount();
 getBagSize();
 getCraftLevel();

@@ -193,6 +193,7 @@ class Bot {
         this.walkXp = 0;
         this.nextCraftLevelXp = 100;
         this.nextWalkLevelXp = 100;
+        this.workInSilence = false;
         this.setNextLevelXp();
     }
     update() {
@@ -225,7 +226,7 @@ class Bot {
                     return;
                 }
             }
-            console.log("timeout");
+            console.log("RunCode() out of time");
         } catch (e) {
             console.error(e);
             this.say("error", "red", 10);
@@ -295,7 +296,11 @@ class Bot {
                 }));
             interpreter.setProperty(globalObject, 'wait', interpreter.createNativeFunction(
                 function wait(duration) {
-                    self.sayAndWait(`waiting ${duration} sec`, 'gray', duration || 0.01);
+                    if(self.workInSilence){
+                        self.currentAction = new WaitAnim(duration || 0.01);
+                    } else {
+                        self.sayAndWait(`waiting ${duration} sec`, 'gray', duration || 0.01);
+                    }
                 }));
             interpreter.setProperty(globalObject, 'craft', interpreter.createNativeFunction(
                 function craft() {
@@ -339,6 +344,11 @@ class Bot {
             interpreter.setProperty(globalObject, 'setSkin', interpreter.createNativeFunction(
                 function setSkin(skinIndex) {
                     self.setSkin(skinIndex);
+                    self.currentAction = new WaitAnim(0.3);
+                }));
+            interpreter.setProperty(globalObject, 'setWorkInSilence', interpreter.createNativeFunction(
+                function setWorkInSilence(silence) {
+                    self.workInSilence = !!silence;
                     self.currentAction = new WaitAnim(0.3);
                 }));
             interpreter.setProperty(globalObject, 'getBotsCount', interpreter.createNativeFunction(
@@ -430,8 +440,8 @@ class Bot {
                     } else {
                         globalQueues[topic].push(value);
                     }
-                    const duration = globalQueues[topic].length < 100 
-                        && Object.keys(globalQueues).length < 100 
+                    const duration = globalQueues[topic].length < 100
+                        && Object.keys(globalQueues).length < 100
                         ? 0.2 : 3;
                     self.currentAction = new WaitAnim(duration);
                     if (globalQueues[topic].length > 200) {
@@ -478,12 +488,14 @@ class Bot {
         const speed = 3 * this.getWalkSpeedBonus();
         this.currentAction = new MoveToAnim(this, target.cell.i, target.cell.j, speed);
         const targetName = target.building != null ? target.building.name : `(${cell_i}, ${cell_j})`;
-        this.say(`Going to ${targetName}`, 'gray', 1);
+        if(!this.workInSilence){
+            this.say(`Going to ${targetName}`, 'gray', 1);
+        }
         const current = this.getCell();
         this.lookLeft = current.i > target.cell.i;
         this.walkXp += Math.min(Math.abs(target.cell.i - current.i), Math.abs(target.cell.j - current.j));
         this.onXpGained();
-    }
+    }    
     sayAndWait(msg, color, duration) {
         if (msg === undefined) {
             throw new Error('Missing argument on say()')
@@ -718,13 +730,13 @@ class CraftAnim {
         }
     }
 }
-function createStartingBots(){
+function createStartingBots() {
     const params = new URLSearchParams(window.location.search);
     const cheating = params.get("cheat");
-    if(cheating){
+    if (cheating) {
         let b = [];
-        for(let i = 1; i <= cheating; i++){
-            b.push(new Bot(i, 48 * (i % 15), 48 * Math.floor(i / 15) ));            
+        for (let i = 1; i <= 25; i++) {
+            b.push(new Bot(i, 48 * i, 48 * 6));
         }
         return b;
     }
@@ -1142,6 +1154,7 @@ class Headquarters {
         this.code = "";
         this.error = null;
         this.level = 1;
+        this.maxLevel = 25;
     }
     paint() {
         const topX = Map.BorderX + this.cell.i * 48;
@@ -1175,7 +1188,7 @@ class Headquarters {
 
         ctx.fillStyle = "white";
         ctx.font = "12px Verdana";
-        ctx.fillText(`Level ${this.level}`, cursorX, cursorY);
+        ctx.fillText(`Level ${this.level} / ${this.maxLevel}`, cursorX, cursorY);
         cursorY += 18;
 
         ctx.fillStyle = "white";
@@ -1225,16 +1238,17 @@ class Headquarters {
     missionEnded() {
         this.addNewBot();
         this.level = this.missions[0].lvl + this.missions[1].lvl - 1;
-        console.log(`${new Date()} Level ${this.level}: ${this.missions[0].lvl} + ${this.missions[1].lvl}`)
-        const index = Math.floor((this.level - 1) / 2);
-        if (index >= this.sprites.length) {
+        console.log(`${new Date()} Level ${this.level}: ${this.missions[0].lvl} + ${this.missions[1].lvl}`)      
+        if (this.level >= this.maxLevel) {
             if (!this.ended) {
                 showEndGameScreen();
             }
-            this.ended = true;
-            return;
+            this.ended = true;            
         }
-        this.sprite = this.sprites[index];
+        const index = Math.floor((this.level - 1) / 2);
+        if (index < this.sprites.length){
+            this.sprite = this.sprites[index];
+        }
     }
     addNewBot() {
         const coord = map.getCoord(this.cell);
