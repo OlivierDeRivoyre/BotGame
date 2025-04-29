@@ -321,7 +321,7 @@ class Bot {
                 }));
             interpreter.setProperty(globalObject, 'tryCraft', interpreter.createNativeFunction(
                 function tryCraft() {
-                    self.tryCraft();
+                    return self.tryCraft();
                 }));
             interpreter.setProperty(globalObject, 'craftOrGetAMissingIngredient', interpreter.createNativeFunction(
                 function craftOrGetAMissingIngredient() {
@@ -554,6 +554,7 @@ class Bot {
         this.currentAction = new CraftAnim(this, building.recipe);
         this.craftXp++;
         this.onXpGained();
+        return null;
     }
     craft() {
         const missing = this.internalCraftOrGetAMissingIngredient()
@@ -566,6 +567,7 @@ class Bot {
         if (missing != null) {
             this.currentAction = new WaitAnim(0.1);
         }
+        return missing == null;
     }
     craftOrGetAMissingIngredient() {
         const missing = this.internalCraftOrGetAMissingIngredient();
