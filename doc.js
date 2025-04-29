@@ -507,6 +507,8 @@ getBotsCount();
 getBagSize();
 getCraftLevel();
 getWalkLevel();
+getMissionLevel("Apple");
+getMissingItemsCountForMission("Cloth");
 bagHasSpace();
 getBagItemsCount("Water");
 bagHasItem();

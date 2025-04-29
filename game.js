@@ -296,7 +296,7 @@ class Bot {
                 }));
             interpreter.setProperty(globalObject, 'wait', interpreter.createNativeFunction(
                 function wait(duration) {
-                    if(self.workInSilence){
+                    if (self.workInSilence) {
                         self.currentAction = new WaitAnim(duration || 0.01);
                     } else {
                         self.sayAndWait(`waiting ${duration} sec`, 'gray', duration || 0.01);
@@ -366,6 +366,15 @@ class Bot {
             interpreter.setProperty(globalObject, 'getWalkLevel', interpreter.createNativeFunction(
                 function getWalkLevel() {
                     return self.walkLevel;
+                }));
+            interpreter.setProperty(globalObject, 'getMissionLevel', interpreter.createNativeFunction(
+                function getMissionLevel(itemName) {
+                    return headquarters.getMission(itemName).lvl;
+                }));
+            interpreter.setProperty(globalObject, 'getMissingItemsCountForMission', interpreter.createNativeFunction(
+                function getMissingItemsCountForMission(itemName) {
+                    const m = headquarters.getMission(itemName);
+                    return m.max - m.count;
                 }));
             interpreter.setProperty(globalObject, 'bagHasSpace', interpreter.createNativeFunction(
                 function bagHasSpace() {
@@ -488,14 +497,14 @@ class Bot {
         const speed = 3 * this.getWalkSpeedBonus();
         this.currentAction = new MoveToAnim(this, target.cell.i, target.cell.j, speed);
         const targetName = target.building != null ? target.building.name : `(${cell_i}, ${cell_j})`;
-        if(!this.workInSilence){
+        if (!this.workInSilence) {
             this.say(`Going to ${targetName}`, 'gray', 1);
         }
         const current = this.getCell();
         this.lookLeft = current.i > target.cell.i;
         this.walkXp += Math.max(Math.abs(target.cell.i - current.i), Math.abs(target.cell.j - current.j));
         this.onXpGained();
-    }    
+    }
     sayAndWait(msg, color, duration) {
         if (msg === undefined) {
             throw new Error('Missing argument on say()')
@@ -1238,15 +1247,15 @@ class Headquarters {
     missionEnded() {
         this.addNewBot();
         this.level = this.missions[0].lvl + this.missions[1].lvl - 1;
-        console.log(`${new Date()} Level ${this.level}: ${this.missions[0].lvl} + ${this.missions[1].lvl}`)      
+        console.log(`${new Date()} Level ${this.level}: ${this.missions[0].lvl} + ${this.missions[1].lvl}`)
         if (this.level >= this.maxLevel) {
             if (!this.ended) {
                 showEndGameScreen();
             }
-            this.ended = true;            
+            this.ended = true;
         }
         const index = Math.floor((this.level - 1) / 2);
-        if (index < this.sprites.length){
+        if (index < this.sprites.length) {
             this.sprite = this.sprites[index];
         }
     }
@@ -1263,6 +1272,16 @@ class Headquarters {
         let fakeBot = new Bot(-1, 0, 0);
         fakeBot.setCode(this.code);
         this.error = fakeBot.error;
+    }
+    getMission(itemName){
+        if(!itemName){
+            throw new Error(`Missing argument for getMission()`);
+        }
+        switch(itemName.toLowerCase()){
+            case items.apple.name.toLowerCase() : return this.missions[0];
+            case items.cloth.name.toLowerCase() : return this.missions[1];
+        }
+        throw new Error(`Invalid argument for getMission('${itemName}'): only '${items.apple.name}' or '${items.cloth.name} is accepted`);
     }
 }
 const headquarters = new Headquarters();
