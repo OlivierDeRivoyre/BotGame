@@ -146,6 +146,19 @@ function tick() {
     setTimeout(tick, tickDuration);
 }
 
+function getTimePlayed(ticks) {
+    let playedSec = ((ticks | tickNumber) / 30).toFixed(3);
+    let hour = Math.floor(playedSec / 3600);
+    let min = Math.floor((playedSec - hour * 3600) / 60);
+    let sec = Math.floor(playedSec - hour * 3600 - min * 60);
+    let milli = Math.floor((playedSec - Math.floor(playedSec)) * 1000);
+    hour = hour.toLocaleString(undefined, { minimumIntegerDigits: 2 });
+    min = min.toLocaleString(undefined, { minimumIntegerDigits: 2 });
+    sec = sec.toLocaleString(undefined, { minimumIntegerDigits: 2 });
+    milli = milli.toLocaleString(undefined, { minimumIntegerDigits: 3 });
+    return `${hour}:${min}:${sec}.${milli}`
+}
+
 function getDungeonTileSetHeroSprite(i, j) {
     const x = 256 + i * 64;
     const y = j * 64;
@@ -1247,7 +1260,7 @@ class Headquarters {
     missionEnded() {
         this.addNewBot();
         this.level = this.missions[0].lvl + this.missions[1].lvl - 1;
-        console.log(`${new Date()} Level ${this.level}: ${this.missions[0].lvl} + ${this.missions[1].lvl}`)
+        console.log(`${getTimePlayed()} Level ${this.level}: ${this.missions[0].lvl} + ${this.missions[1].lvl}`)
         if (this.level >= this.maxLevel) {
             if (!this.ended) {
                 showEndGameScreen();
@@ -1273,13 +1286,13 @@ class Headquarters {
         fakeBot.setCode(this.code);
         this.error = fakeBot.error;
     }
-    getMission(itemName){
-        if(!itemName){
+    getMission(itemName) {
+        if (!itemName) {
             throw new Error(`Missing argument for getMission()`);
         }
-        switch(itemName.toLowerCase()){
-            case items.apple.name.toLowerCase() : return this.missions[0];
-            case items.cloth.name.toLowerCase() : return this.missions[1];
+        switch (itemName.toLowerCase()) {
+            case items.apple.name.toLowerCase(): return this.missions[0];
+            case items.cloth.name.toLowerCase(): return this.missions[1];
         }
         throw new Error(`Invalid argument for getMission('${itemName}'): only '${items.apple.name}' or '${items.cloth.name} is accepted`);
     }
@@ -1684,16 +1697,7 @@ restore();
 
 class EndGameDialog {
     constructor(ticks) {
-        let playedSec = (ticks / 30).toFixed(3);
-        let hour = Math.floor(playedSec / 3600);
-        let min = Math.floor((playedSec - hour * 3600) / 60);
-        let sec = Math.floor(playedSec - hour * 3600 - min * 60);
-        let milli = Math.floor((playedSec - Math.floor(playedSec)) * 1000);
-        hour = hour.toLocaleString(undefined, { minimumIntegerDigits: 2 });
-        min = min.toLocaleString(undefined, { minimumIntegerDigits: 2 });
-        sec = sec.toLocaleString(undefined, { minimumIntegerDigits: 2 });
-        milli = milli.toLocaleString(undefined, { minimumIntegerDigits: 3 });
-        this.timePlayed = `${hour}:${min}:${sec}.${milli}`
+        this.timePlayed = getTimePlayed(ticks)
         this.window = { x: 100, y: 100, width: CanvasWidth - 200, height: CanvasHeight - 200 };
         this.button = { x: 390, y: 280, width: 280, height: 48, label: "Keep playing" };
     }
