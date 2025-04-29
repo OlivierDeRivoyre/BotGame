@@ -673,7 +673,7 @@ class Bot {
         return (10.0 + this.craftLevel) / 10;
     }
     getWalkSpeedBonus() {
-        return (10.0 + this.craftLevel) / 10;
+        return (10.0 + this.walkLevel) / 10;
     }
     setNextLevelXp() {
         this.craftXp = 0;
