@@ -9,15 +9,53 @@
         border: 3px solid green;
         display: block;
     }
+    #mainDiv {
+        display: grid;
+        grid-template-columns: min-content auto;
+        grid-gap: 10px;
+        padding: 10px;
+    }
+    #div1 {
+        grid-area: 1 / 1 / span 1 / span 2;
+    }
+    #div2 {
+        grid-area: 2 / 1;        
+    }
+    #div3 {
+        grid-area: 2 / 2 / span 1 / span 1;
+        padding-right: 0.5em;
+        margin-right: auto;       
+        display: block;
+    }
+    @media only screen and (min-width: 1600px) {
+        #div1 {
+            grid-area: 1 / 2 / span 1 / span 1;
+        }
+        #div2 {
+            grid-area: 1 / 1/ span 2 / span 1;
+            margin-top: 4em;
+        }
+        #div3 {
+            grid-area: 2 / 2 / span 1 / span 1;            
+        }
+    }
+    #runButton {
+        background-color: #04AA6D;
+        border: none;
+        color: white;
+        padding: 12px 32px;
+    }
 </style>
 
 <body>
-    <canvas id="myCanvas" width="800" height="450" class="board"></canvas>
-    <br>
-    <div style="display: flex;">        
-        <div style="flex-grow: 1;">     
-            <div id="error" style="color:red"></div>     
-            <textarea id="code" spellcheck="false" rows="12" cols="80" style="margin-right:0.5em"
+    <div id="mainDiv">
+        <div id="div1">
+            <canvas id="myCanvas" width="800" height="450" class="board"></canvas>
+        </div>
+
+        <div id="div2">
+            <div id="error" style="color:red"></div>
+            <textarea id="code" spellcheck="false" rows="20" cols="80" style="margin-right:0.5em"
                 onkeydown="keepFocusOnTab(event, this)">
 while(true){
   moveTo("well");
@@ -36,14 +74,13 @@ while(true){
             <button onclick="runCode(document.getElementById('applyAll').checked)" id="runButton">Run</button>
             <input type="radio" name="applyTo" id="applyAll" />Apply all
             <input type="radio" name="applyTo" checked="checked" /><label id="applyOnlyTo">Only on bot 1</label>
-            <!--<button onclick="stepButton()" id="stepButton" disabled="disabled">Step</button>
-    <button onclick="clear()">Clear</button>-->
-            
+
         </div>
-        <div>
+        <div id="div3">
             <select id="docCombo" onchange="showDoc(this.value)"></select>
             <div id="docContent"></div>
         </div>
+    </div>
     </div>
 </body>
 <script src="./libs/acorn.js"></script>

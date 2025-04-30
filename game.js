@@ -312,7 +312,7 @@ class Bot {
                     if (self.workInSilence) {
                         self.currentAction = new WaitAnim(duration || 0.01);
                     } else {
-                        self.sayAndWait(`waiting ${duration} sec`, 'gray', duration || 0.01);
+                        self.sayAndWait(`waiting ${duration} sec`, '#222', duration || 0.01);
                     }
                 }));
             interpreter.setProperty(globalObject, 'craft', interpreter.createNativeFunction(
@@ -516,7 +516,7 @@ class Bot {
         this.currentAction = new MoveToAnim(this, target.cell.i, target.cell.j, speed);
         const targetName = target.building != null ? target.building.name : `(${cell_i}, ${cell_j})`;
         if (!this.workInSilence) {
-            this.say(`Going to ${targetName}`, 'gray', 1);
+            this.say(`Going to ${targetName}`, '#222', 1);
         }
         const current = this.getCell();
         this.lookLeft = current.i > target.cell.i;
