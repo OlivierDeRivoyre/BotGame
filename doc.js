@@ -509,6 +509,7 @@ getCraftLevel();
 getWalkLevel();
 getMissionLevel("Apple");
 getMissingItemsCountForMission("Cloth");
+getTotalItemsCountForMission("Apple");
 bagHasSpace();
 getBagItemsCount("Water");
 bagHasItem();

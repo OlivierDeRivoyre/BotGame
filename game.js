@@ -389,6 +389,11 @@ class Bot {
                     const m = headquarters.getMission(itemName);
                     return m.max - m.count;
                 }));
+            interpreter.setProperty(globalObject, 'getTotalItemsCountForMission', interpreter.createNativeFunction(
+                function getTotalItemsCountForMission(itemName) {
+                    const m = headquarters.getMission(itemName);
+                    return m.max;
+                }));
             interpreter.setProperty(globalObject, 'bagHasSpace', interpreter.createNativeFunction(
                 function bagHasSpace() {
                     return self.bagSize - self.bag.length > 0;
