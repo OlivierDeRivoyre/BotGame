@@ -184,7 +184,7 @@ moveTo("tree");
 drop(); drop();
 </pre></code>`,
 `<p>
-<code>take()<code> can take an argument to specify wich item take.
+<code>take()</code> can take an argument to specify wich item take.
 The argument is case insensitive.
 Without argument, the bot take the most advanced item by default.
 </p>`,
