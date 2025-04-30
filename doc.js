@@ -72,7 +72,7 @@ You can use the standard ES5 JavaScript functions as
 <code>if</code>,
 <code>while</code>,
 <code>function</code>,
-<code>for</code>,.
+<code>for</code>.
 You also have access to the bot 
 functions that give order to the bot as 
 <code>moveTo("Well")</code>.

@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=810; initial-scale=1.0">
 <style>
     .board {
-        margin-top: 4em;
+        margin-top: 1em;
         margin-left: auto;
         margin-right: auto;
         border: 3px solid green;
@@ -33,17 +33,24 @@
         }
         #div2 {
             grid-area: 1 / 1/ span 2 / span 1;
-            margin-top: 4em;
+            margin-top: 1em;
         }
         #div3 {
             grid-area: 2 / 2 / span 1 / span 1;            
         }
     }
     #runButton {
-        background-color: #04AA6D;
+        background-color: #374;
         border: none;
         color: white;
-        padding: 12px 32px;
+        padding: 12px 64px;
+        cursor: pointer;
+    }
+    #runButton:hover {
+        background-color: #4A4;
+    }     
+    body{
+        font-family: "Segoe UI Adjusted", "Segoe UI", "Liberation Sans", sans-serif;
     }
 </style>
 
@@ -55,7 +62,7 @@
 
         <div id="div2">
             <div id="error" style="color:red"></div>
-            <textarea id="code" spellcheck="false" rows="20" cols="80" style="margin-right:0.5em"
+            <textarea id="code" spellcheck="false" rows="16" cols="80" style="margin-right:0.5em"
                 onkeydown="keepFocusOnTab(event, this)">
 while(true){
   moveTo("well");

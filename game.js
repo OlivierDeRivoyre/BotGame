@@ -235,7 +235,7 @@ class Bot {
                 if (!this.interpreter.step()) {
                     this.interpreter = null;
 
-                    console.log("done");
+                    console.log(getTimePlayed() +  " done");
                     return;
                 }
             }
