@@ -1270,9 +1270,12 @@ class Headquarters {
         console.log(`${getTimePlayed()} Level ${this.level}: ${this.missions[0].lvl} + ${this.missions[1].lvl}`)
         if (this.level >= this.maxLevel) {
             if (!this.ended) {
-                showEndGameScreen();
-            }
+                showEndGameScreen();                
+            }            
             this.ended = true;
+            for(let i = 0; i < 4; i++){
+                this.addNewBot();
+            }
         }
         const index = Math.floor((this.level - 1) / 2);
         if (index < this.sprites.length) {
@@ -1719,6 +1722,9 @@ class EndGameDialog {
         ctx.fillStyle = "black";
         ctx.font = "22px Verdana";
         ctx.fillText(`You ended the game in ${this.timePlayed} (CPU ticks)`, this.window.x + 25, this.window.y + 120);
+        ctx.font = "12px Verdana";
+        ctx.fillText(`While there is no goal, you will get 5 bots for each new level`, 
+            this.window.x + 200, this.window.y + 244);
         this.paintButton();
     }
     paintButton() {
