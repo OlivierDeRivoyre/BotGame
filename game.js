@@ -306,6 +306,7 @@ class Bot {
                 function say(msg) {
                     const duration = 1.5;
                     self.sayAndWait(msg, 'yellow', duration);
+                    console.log(`${getTimePlayed()} Bot ${self.id}: ${msg}`);
                 }));
             interpreter.setProperty(globalObject, 'wait', interpreter.createNativeFunction(
                 function wait(duration) {
