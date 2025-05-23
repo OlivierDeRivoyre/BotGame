@@ -560,6 +560,9 @@ Code source can found on:
 <p>
 <a href="https://github.com/OlivierDeRivoyre/HealGame">github</a>
 </p>
+<p>
+Special thanks to Jerome Poupon for beta testing this game.
+</p>
 `
 ]);
     
